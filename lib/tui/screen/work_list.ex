@@ -4,6 +4,12 @@ defmodule ExStorage.TUI.Screens.WorksList do
   alias ExStorage.DB.Queries
 
   @impl true
+  def onload(state) do
+    state = refresh_works(state)
+    render(state)
+  end
+
+  @impl true
   def render(state) do
     works = Map.get(state, :works, [])
     sel   = Map.get(state, :cursor, 0)
@@ -40,9 +46,24 @@ defmodule ExStorage.TUI.Screens.WorksList do
     {:same, refresh_works(state)}
   end
 
-  def handle_event(_state, {:char, "n"}) do
+  def handle_event(state, {:char, "n"}) do
     # TODO: Implement.
-    {ExStorage.TUI.Screens.NewWork, %{}}
+    # {ExStorage.TUI.Screens.NewWork, %{}}
+     sample = ExStorage.Domain.Work.from_map(%{
+      "title" => "Sample Work #{:os.system_time(:second)}",
+      "type" => "novel",
+      "creator" => "TUI",
+      "released" => 2025,
+      "concepts" => []
+    })
+
+    case Queries.create_work(sample) do
+      {:ok, _} ->
+        {:same, refresh_works(state)}
+      {:error, err} ->
+        Log.erro("An error occured during work creation: #{inspect(err)}")
+        {:same, state}
+    end
   end
 
   def handle_event(state, {:char, "q"}), do: {:quit, state}
@@ -58,8 +79,8 @@ defmodule ExStorage.TUI.Screens.WorksList do
         %{state | works: works_list, cursor: 0}
 
       {:error, reason} ->
-        IO.puts("Error during works fetch: #{inspect(reason)}")
-        state
+        Log.erro("Error during works fetching: #{inspect(reason)}")
+        {:same, state}
     end
   end
 end

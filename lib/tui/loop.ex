@@ -19,7 +19,7 @@ defmodule ExStorage.TUI.Loop do
 
     {:ok, _task} = Task.start_link(fn -> input_loop(self()) end)
 
-    send(self(), :render)
+    send(self(), :onload)
     {:ok, state}
   end
 
@@ -37,7 +37,7 @@ defmodule ExStorage.TUI.Loop do
     GenServer.cast(__MODULE__, {:external_event, event})
   end
 
-  def clear, do: IO.write("\e[2J\e[H")
+  defp clear, do: IO.write("\e[2J\e[H")
 
   defp input_loop(server) do
     case Input.read_event() do
@@ -70,11 +70,11 @@ defmodule ExStorage.TUI.Loop do
 
       {next_screen_mod, next_scr_state} when is_atom(next_screen_mod) ->
         new_state = %{state | screen: next_screen_mod, screen_state: next_scr_state}
-        send(self(), :render)
+        send(self(), :onload)
         {:noreply, new_state}
 
       other ->
-        IO.inspect(other, label: "TUI: unexpected result from handle_event")
+        Log.erro("TUI: unexpected result from handle_event: #{inspect(other)}")
         {:noreply, state}
     end
   end
@@ -88,31 +88,37 @@ defmodule ExStorage.TUI.Loop do
   end
 
   @impl true
+  def handle_info(:onload, %{screen: screen_mod, screen_state: scr_state} = state) do
+    clear()
+    try do
+      screen_mod.onload(scr_state)
+    rescue
+      err ->
+        Log.erro("An error occurred during screen #{inspect(screen_mod)} loading: #{inspect(err)}")
+    end
+
+    {:noreply, state}
+  end
+
+  @impl true
   def handle_info(:render, %{screen: screen_mod, screen_state: scr_state} = state) do
     clear()
     try do
       screen_mod.render(scr_state)
     rescue
       err ->
-        IO.puts(
-          "An error occurred during screen #{inspect(screen_mod)} rendering: #{inspect(err)}"
-        )
+        Log.erro("An error occurred during screen #{inspect(screen_mod)} rendering: #{inspect(err)}")
     end
 
     {:noreply, state}
   end
 
   defp safe_handle_event(screen_mod, scr_state, event) do
-    IO.puts("Llamando a handle_event en #{inspect(screen_mod)} con evento #{inspect(event)}")
-
     try do
       screen_mod.handle_event(scr_state, event)
     rescue
       err ->
-        IO.puts(
-          "An error occurred during event handling from #{inspect(screen_mod)}: #{inspect(err)}"
-        )
-
+        Log.erro("An error occurred during event handling from #{inspect(screen_mod)}: #{inspect(err)}")
         {:same, scr_state}
     end
   end
