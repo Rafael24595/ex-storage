@@ -24,3 +24,6 @@ ex_storage-*.tar
 
 # Docker data
 /data
+
+# Logs
+/log
