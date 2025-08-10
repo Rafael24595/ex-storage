@@ -5,45 +5,56 @@ defmodule ExStorage.TUI.Screens.WorksList do
 
   @impl true
   def onload(state) do
-    state = refresh_works(state)
+    ExStorage.Core.Work.StateServer.refresh()
     render(state)
   end
 
   @impl true
-  def render(state) do
-    works = Map.get(state, :works, [])
-    sel   = Map.get(state, :cursor, 0)
+  def render(_state) do
+    work_state = ExStorage.Core.Work.StateServer.state()
+    works = work_state.works
+    cursor = work_state.cursor
+    from = work_state.offset
+    to = work_state.last
 
-    IO.puts("Media Source (#{length(works)})")
+    IO.puts("Media Source (#{length(works)}) [#{from} -> #{to}]")
     IO.puts("------------------------------")
 
     Enum.with_index(works)
     |> Enum.each(fn {w, idx} ->
       title  = w.title || "(untitled)"
       type   = w.type || "-"
-      marker = if idx == sel, do: "›", else: " "
+      marker = if idx == cursor, do: "›", else: " "
       IO.puts("#{marker} #{title} (#{type})")
     end)
 
-    IO.puts("\nCommands: ↑ ↓  r=refresh  n=new  q=quit")
+    IO.puts("\nCommands: ↑ ↓ ← →  r=refresh  n=new  q=quit")
   end
 
   @impl true
   def handle_event(state, :up) do
-    cursor = Map.get(state, :cursor, 0)
-    new_cursor = max(cursor - 1, 0)
-    {:same, %{state | cursor: new_cursor}}
+    ExStorage.Core.Work.StateServer.decrement_cursor()
+    {:same, state}
   end
 
   def handle_event(state, :down) do
-    cursor = Map.get(state, :cursor, 0)
-    total  = length(Map.get(state, :works, []))
-    new_cursor = min(cursor + 1, max(total - 1, 0))
-    {:same, %{state | cursor: new_cursor}}
+    ExStorage.Core.Work.StateServer.increment_cursor()
+    {:same, state}
+  end
+
+  def handle_event(state, :left) do
+    ExStorage.Core.Work.StateServer.prev()
+    {:same, state}
+  end
+
+  def handle_event(state, :right) do
+    ExStorage.Core.Work.StateServer.next()
+    {:same, state}
   end
 
   def handle_event(state, {:char, "r"}) do
-    {:same, refresh_works(state)}
+    ExStorage.Core.Work.StateServer.refresh()
+    {:same, state}
   end
 
   def handle_event(state, {:char, "n"}) do
@@ -59,7 +70,8 @@ defmodule ExStorage.TUI.Screens.WorksList do
 
     case Queries.create_work(sample) do
       {:ok, _} ->
-        {:same, refresh_works(state)}
+        ExStorage.Core.Work.StateServer.refresh()
+        {:same, state}
       {:error, err} ->
         Log.erro("An error occured during work creation: #{inspect(err)}")
         {:same, state}
@@ -72,15 +84,4 @@ defmodule ExStorage.TUI.Screens.WorksList do
     {:same, state}
   end
 
-  # TODO: Implement módule status.
-  defp refresh_works(state) do
-    case Queries.find_works() do
-      {:ok, works_list} ->
-        %{state | works: works_list, cursor: 0}
-
-      {:error, reason} ->
-        Log.erro("Error during works fetching: #{inspect(reason)}")
-        {:same, state}
-    end
-  end
 end

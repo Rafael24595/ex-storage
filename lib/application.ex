@@ -7,7 +7,7 @@ defmodule ExStorage.Application do
 
     children = [
       {ExStorage.Log.Logger, session_id},
-      ExStorage.Core.StateServer,
+      ExStorage.Core.Work.StateServer,
       ExStorage.DB.ClientSupervisor,
       ExStorage.TUI.Loop
     ]
