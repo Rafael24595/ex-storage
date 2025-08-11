@@ -7,8 +7,9 @@ defmodule ExStorage.DB.ClientSupervisor do
 
   @impl true
   def init(:ok) do
+    client = Application.get_env(:ex_storage, :db_client, ExStorage.DB.SurrealDB.Client)
     children = [
-      {ExStorage.DB.Client, []}
+      client
     ]
 
     Supervisor.init(children, strategy: :one_for_one)

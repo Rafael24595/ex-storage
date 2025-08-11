@@ -1,4 +1,4 @@
-defmodule ExStorage.DB.Client do
+defmodule ExStorage.DB.SurrealDB.Client do
   use GenServer
 
   @default_url "http://127.0.0.1:8000/rpc"

@@ -1,5 +1,8 @@
 defmodule ExStorage.Core.Work.State do
+  @type repo_module :: module()
+
   defstruct [
+    repository: nil,
     works: [],
     cursor: 0,
     count: 0,
@@ -9,6 +12,7 @@ defmodule ExStorage.Core.Work.State do
   ]
 
   @type t :: %__MODULE__{
+          repository: repo_module(),
           works: list(ExStorage.Domain.Work.t()),
           cursor: integer() | nil,
           count: integer() | nil,

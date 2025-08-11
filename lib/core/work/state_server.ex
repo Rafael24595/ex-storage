@@ -1,10 +1,15 @@
 defmodule ExStorage.Core.Work.StateServer do
   use GenServer
 
-  # TODO: Inject the DB repository instead of using of ExStorage.DB.Client
+  def start_link(repository \\ nil) do
+    repository = if repository == [], do: nil, else: repository
+    GenServer.start_link(__MODULE__, repository, name: __MODULE__)
+  end
 
-  def start_link(_) do
-    GenServer.start_link(__MODULE__, %ExStorage.Core.Work.State{}, name: __MODULE__)
+  @impl true
+  def init(repository) do
+    repository = repository || Application.fetch_env!(:ex_storage, :work_repo)
+    {:ok, %ExStorage.Core.Work.State{repository: repository}}
   end
 
   def state(), do: GenServer.call(__MODULE__, :get_state)
@@ -15,17 +20,19 @@ defmodule ExStorage.Core.Work.StateServer do
   def increment_cursor(), do: GenServer.cast(__MODULE__, :increment_cursor)
 
   @impl true
-  def init(state), do: {:ok, state}
-
-  @impl true
   def handle_call(:get_state, _from, state), do: {:reply, state, state}
 
   @impl true
   def handle_call(:refresh, _from, state) do
     limit = max(state.limit, 10)
+
     case fetch(state, limit, state.offset) do
       {:ok, new_state} ->
         {:reply, {:ok, new_state}, new_state}
+
+      {:same, _state} ->
+        {:reply, {:same, state}, state}
+
       {:error, cause} ->
         Log.erro("An error occurred during work state server refreshing: #{inspect(cause)}")
         {:reply, {:ok, state}, state}
@@ -36,11 +43,19 @@ defmodule ExStorage.Core.Work.StateServer do
   def handle_call({:prev, limit}, _from, state) do
     limit = limit || state.limit || 10
     offset = max(state.offset - limit, 0)
+
     case fetch(state, limit, offset) do
       {:ok, new_state} ->
         {:reply, {:ok, new_state}, new_state}
+
+      {:same, _} ->
+        {:reply, {:same, state}, state}
+
       {:error, cause} ->
-        Log.erro("An error occurred during work state server previous page fetching: #{inspect(cause)}")
+        Log.erro(
+          "An error occurred during work state server previous page fetching: #{inspect(cause)}"
+        )
+
         {:reply, {:ok, state}, state}
     end
   end
@@ -49,11 +64,19 @@ defmodule ExStorage.Core.Work.StateServer do
   def handle_call({:next, limit}, _from, state) do
     limit = limit || state.limit || 10
     offset = state.offset + limit
-     case fetch(state, limit, offset) do
+
+    case fetch(state, limit, offset) do
       {:ok, new_state} ->
         {:reply, {:ok, new_state}, new_state}
+
+      {:same, _state} ->
+        {:reply, {:same, state}, state}
+
       {:error, cause} ->
-        Log.erro("An error occurred during work state server next page fetching: #{inspect(cause)}")
+        Log.erro(
+          "An error occurred during work state server next page fetching: #{inspect(cause)}"
+        )
+
         {:reply, {:ok, state}, state}
     end
   end
@@ -67,25 +90,19 @@ defmodule ExStorage.Core.Work.StateServer do
 
   @impl true
   def handle_cast(:increment_cursor, state) do
-    total  = length(state.works)
+    total = length(state.works)
     new_cursor = min(state.cursor + 1, max(total - 1, 0))
     new_state = %{state | cursor: new_cursor}
     {:noreply, new_state}
   end
 
   defp fetch(state, limit, offset) do
-    query = "SELECT * FROM work LIMIT #{limit} START #{offset};"
-    count_query = "SELECT count() FROM work GROUP BY count;"
-
-    with {:ok, [%{"result" => works}]} <- ExStorage.DB.Client.query("test", "work", query),
-         {:ok, [%{"result" => [%{"count" => count}]}]} <-
-           ExStorage.DB.Client.query("test", "work", count_query) do
-      processed_works = Enum.map(works, &ExStorage.Domain.Work.from_map/1)
-
+    with {:ok, works} <- state.repository.find(limit, offset),
+         {:ok, count} <- state.repository.count() do
       offset = min(offset, count)
 
       cond do
-        offset == count and limit == state.limit ->
+        offset == state.offset and count == state.count and limit == state.limit ->
           {:ok, state}
 
         offset == count ->
@@ -93,9 +110,10 @@ defmodule ExStorage.Core.Work.StateServer do
 
         true ->
           last = min(offset + limit, count)
+
           new_state = %ExStorage.Core.Work.State{
             state
-            | works: processed_works,
+            | works: works,
               cursor: 0,
               count: count,
               offset: offset,

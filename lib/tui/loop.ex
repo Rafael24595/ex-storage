@@ -68,6 +68,10 @@ defmodule ExStorage.TUI.Loop do
         send(self(), :render)
         {:noreply, new_state}
 
+      {:keep, next_scr_state} ->
+        new_state = %{state | screen_state: next_scr_state}
+        {:noreply, new_state}
+
       {next_screen_mod, next_scr_state} when is_atom(next_screen_mod) ->
         new_state = %{state | screen: next_screen_mod, screen_state: next_scr_state}
         send(self(), :onload)

@@ -43,12 +43,21 @@ defmodule ExStorage.TUI.Screens.WorksList do
   end
 
   def handle_event(state, :left) do
-    ExStorage.Core.Work.StateServer.prev()
-    {:same, state}
+    case ExStorage.Core.Work.StateServer.prev() do
+      {:same, _} ->
+        {:keep, state}
+      {:ok, _} ->
+        {:same, state}
+    end
   end
 
   def handle_event(state, :right) do
-    ExStorage.Core.Work.StateServer.next()
+    case ExStorage.Core.Work.StateServer.next() do
+      {:same, _} ->
+        {:keep, state}
+      {:ok, _} ->
+        {:same, state}
+    end
     {:same, state}
   end
 
@@ -68,7 +77,7 @@ defmodule ExStorage.TUI.Screens.WorksList do
       "concepts" => []
     })
 
-    case Queries.create_work(sample) do
+    case ExStorage.DB.SurrealDB.Work.create(sample) do
       {:ok, _} ->
         ExStorage.Core.Work.StateServer.refresh()
         {:same, state}
@@ -81,7 +90,7 @@ defmodule ExStorage.TUI.Screens.WorksList do
   def handle_event(state, {:char, "q"}), do: {:quit, state}
 
   def handle_event(state, _) do
-    {:same, state}
+    {:keep, state}
   end
 
 end
