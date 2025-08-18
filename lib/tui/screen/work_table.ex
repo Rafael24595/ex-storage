@@ -1,7 +1,5 @@
-defmodule ExStorage.TUI.Screens.WorksList do
+defmodule ExStorage.TUI.Screens.WorkTable do
   @behaviour ExStorage.TUI.Screen
-
-  alias ExStorage.DB.Queries
 
   @impl true
   def onload(state) do
@@ -17,18 +15,26 @@ defmodule ExStorage.TUI.Screens.WorksList do
     from = work_state.offset
     to = work_state.last
 
-    IO.puts("Media Source (#{length(works)}) [#{from} -> #{to}]")
-    IO.puts("------------------------------")
+    header = "Media Source (#{length(works)}) [#{from} - #{to}]"
 
-    Enum.with_index(works)
-    |> Enum.each(fn {w, idx} ->
-      title  = w.title || "(untitled)"
-      type   = w.type || "-"
-      marker = if idx == cursor, do: "›", else: " "
-      IO.puts("#{marker} #{title} (#{type})")
-    end)
+    formatter = fn {w, i} ->
+      title = w.title || "(untitled)"
+      type = w.type || "-"
+      marker = if i == cursor, do: "›", else: " "
+      "#{marker} [#{type}] #{title}"
+    end
 
-    IO.puts("\nCommands: ↑ ↓ ← →  r=refresh  n=new  q=quit")
+    ExStorage.TUI.Screens.Utils.print_sources_list(header, works, formatter)
+
+    commands = [
+      {"↑"}, {"↓"}, {"←"}, {"→"},
+      {"r", "refresh"},
+      {"n", "new"},
+      {"v", "view"},
+      {"q", "quit"}
+    ]
+
+    ExStorage.TUI.Screens.Utils.print_commands(commands)
   end
 
   @impl true
@@ -46,6 +52,7 @@ defmodule ExStorage.TUI.Screens.WorksList do
     case ExStorage.Core.Work.StateServer.prev() do
       {:same, _} ->
         {:keep, state}
+
       {:ok, _} ->
         {:same, state}
     end
@@ -55,9 +62,11 @@ defmodule ExStorage.TUI.Screens.WorksList do
     case ExStorage.Core.Work.StateServer.next() do
       {:same, _} ->
         {:keep, state}
+
       {:ok, _} ->
         {:same, state}
     end
+
     {:same, state}
   end
 
@@ -69,22 +78,28 @@ defmodule ExStorage.TUI.Screens.WorksList do
   def handle_event(state, {:char, "n"}) do
     # TODO: Implement.
     # {ExStorage.TUI.Screens.NewWork, %{}}
-     sample = ExStorage.Domain.Work.from_map(%{
-      "title" => "Sample Work #{:os.system_time(:second)}",
-      "type" => "novel",
-      "creator" => "TUI",
-      "released" => 2025,
-      "concepts" => []
-    })
+    sample =
+      ExStorage.Domain.Work.from_map(%{
+        "title" => "Sample Work #{:os.system_time(:second)}",
+        "type" => "novel",
+        "creator" => "TUI",
+        "released" => 2025,
+        "concepts" => []
+      })
 
     case ExStorage.DB.SurrealDB.Work.create(sample) do
       {:ok, _} ->
         ExStorage.Core.Work.StateServer.refresh()
         {:same, state}
+
       {:error, err} ->
         Log.erro("An error occured during work creation: #{inspect(err)}")
         {:same, state}
     end
+  end
+
+  def handle_event(_state, {:char, "v"}) do
+    {ExStorage.TUI.Screens.WorkView, %{}}
   end
 
   def handle_event(state, {:char, "q"}), do: {:quit, state}
@@ -92,5 +107,4 @@ defmodule ExStorage.TUI.Screens.WorksList do
   def handle_event(state, _) do
     {:keep, state}
   end
-
 end

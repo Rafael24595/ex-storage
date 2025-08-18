@@ -30,9 +30,6 @@ defmodule ExStorage.Core.Work.StateServer do
       {:ok, new_state} ->
         {:reply, {:ok, new_state}, new_state}
 
-      {:same, _state} ->
-        {:reply, {:same, state}, state}
-
       {:error, cause} ->
         Log.erro("An error occurred during work state server refreshing: #{inspect(cause)}")
         {:reply, {:ok, state}, state}
@@ -47,9 +44,6 @@ defmodule ExStorage.Core.Work.StateServer do
     case fetch(state, limit, offset) do
       {:ok, new_state} ->
         {:reply, {:ok, new_state}, new_state}
-
-      {:same, _} ->
-        {:reply, {:same, state}, state}
 
       {:error, cause} ->
         Log.erro(
@@ -68,9 +62,6 @@ defmodule ExStorage.Core.Work.StateServer do
     case fetch(state, limit, offset) do
       {:ok, new_state} ->
         {:reply, {:ok, new_state}, new_state}
-
-      {:same, _state} ->
-        {:reply, {:same, state}, state}
 
       {:error, cause} ->
         Log.erro(

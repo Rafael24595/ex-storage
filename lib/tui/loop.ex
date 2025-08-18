@@ -2,7 +2,7 @@ defmodule ExStorage.TUI.Loop do
   use GenServer
   alias ExStorage.TUI.Input
 
-  @default_screen ExStorage.TUI.Screens.WorksList
+  @default_screen ExStorage.TUI.Screens.WorkTable
 
   def start_link(_args) do
     GenServer.start_link(__MODULE__, :ok, name: __MODULE__)

@@ -8,7 +8,6 @@ defmodule ExStorage.Domain.Work do
     :creator,
     :released,
     :concepts,
-    :based_on,
     type: :other
   ]
 
@@ -18,8 +17,7 @@ defmodule ExStorage.Domain.Work do
           type: String.t(),
           creator: String.t() | nil,
           released: integer() | nil,
-          concepts: list(String.t()),
-          based_on: list(String.t())
+          concepts: list(String.t())
         }
 
   def from_map(map) when is_map(map) do
@@ -30,7 +28,6 @@ defmodule ExStorage.Domain.Work do
       creator: Map.get(map, "creator"),
       released: Map.get(map, "released"),
       concepts: Map.get(map, "concepts", []),
-      based_on: Map.get(map, "based_on", [])
     }
   end
 
@@ -40,8 +37,7 @@ defmodule ExStorage.Domain.Work do
       type: work.type,
       creator: work.creator,
       released: work.released,
-      concepts: work.concepts || [],
-      based_on: work.based_on || []
+      concepts: work.concepts || []
     }
   end
 end
