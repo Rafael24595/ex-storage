@@ -14,7 +14,7 @@ defmodule ExStorage.TUI.Loop do
 
     state = %{
       screen: @default_screen,
-      screen_state: %{works: [], cursor: 0}
+      screen_state: %{}
     }
 
     {:ok, _task} = Task.start_link(fn -> input_loop(self()) end)
@@ -51,17 +51,13 @@ defmodule ExStorage.TUI.Loop do
   end
 
   @impl true
-  def handle_cast({:input, :quit}, state) do
-    Terminal.disable_raw_mode()
-    IO.puts("\nExiting...")
-    System.halt(0)
-    {:stop, :normal, state}
-  end
-
   def handle_cast({:input, event}, %{screen: screen_mod, screen_state: scr_state} = state) do
     case safe_handle_event(screen_mod, scr_state, event) do
-      {:quit, next_scr_state} ->
-        {:stop, :normal, %{state | screen_state: next_scr_state}}
+      {:quit, _next_scr_state} ->
+        Terminal.disable_raw_mode()
+        IO.puts("\nExiting...")
+        System.halt(0)
+        {:stop, :normal, state}
 
       {:same, next_scr_state} ->
         new_state = %{state | screen_state: next_scr_state}

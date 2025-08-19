@@ -18,7 +18,7 @@ defmodule ExStorage.TUI.Screens.WorkView do
       {"Creator", [work.creator]}
     ]
 
-    ExStorage.TUI.Screens.Utils.print_source_table(work.id, columns)
+    print_source_table(work.id, columns)
 
     commands = [
       {"b", "back"},
@@ -26,48 +26,34 @@ defmodule ExStorage.TUI.Screens.WorkView do
       {"q", "quit"},
     ]
 
-    ExStorage.TUI.Screens.Utils.print_commands(commands)
+    ExStorage.TUI.Screens.Modules.commands(commands)
+  end
+
+  def print_source_table(id, columns) do
+    source = "| Source: #{id} |"
+    source_limit = String.duplicate("-", String.length(source))
+
+    {:headers, headers, :rows, rows} = ExStorage.TUI.Screens.Formatter.format_table(columns)
+
+    limit = String.duplicate("-", String.length(headers))
+    IO.puts(source_limit)
+    IO.puts(source)
+    IO.puts(limit)
+    IO.puts(headers)
+    Enum.each(rows, fn r ->
+      IO.puts(limit)
+      IO.puts(r)
+    end)
+    IO.puts(limit)
   end
 
   @impl true
-  def handle_event(state, :up) do
-    ExStorage.Core.Work.StateServer.decrement_cursor()
-    {:same, state}
-  end
-
-  def handle_event(state, :down) do
-    ExStorage.Core.Work.StateServer.increment_cursor()
-    {:same, state}
-  end
-
-  def handle_event(state, :left) do
-    case ExStorage.Core.Work.StateServer.prev() do
-      {:same, _} ->
-        {:keep, state}
-
-      {:ok, _} ->
-        {:same, state}
-    end
-  end
-
-  def handle_event(state, :right) do
-    case ExStorage.Core.Work.StateServer.next() do
-      {:same, _} ->
-        {:keep, state}
-
-      {:ok, _} ->
-        {:same, state}
-    end
-
-    {:same, state}
-  end
-
   def handle_event(_state, {:char, "b"}) do
     {ExStorage.TUI.Screens.WorkTable, %{}}
   end
 
   def handle_event(state, {:char, "r"}) do
-    ExStorage.Core.Work.StateServer.refresh()
+    ExStorage.Core.Work.StateServer.load_page()
     {:same, state}
   end
 

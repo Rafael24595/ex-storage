@@ -12,32 +12,52 @@ defmodule ExStorage.Core.Work.StateServer do
     {:ok, %ExStorage.Core.Work.State{repository: repository}}
   end
 
-  def state(), do: GenServer.call(__MODULE__, :get_state)
-  def refresh(), do: GenServer.call(__MODULE__, :refresh)
-  def prev(limit \\ nil), do: GenServer.call(__MODULE__, {:prev, limit})
-  def next(limit \\ nil), do: GenServer.call(__MODULE__, {:next, limit})
-  def decrement_cursor(), do: GenServer.cast(__MODULE__, :decrement_cursor)
-  def increment_cursor(), do: GenServer.cast(__MODULE__, :increment_cursor)
+  def state(), do: GenServer.call(__MODULE__, :state)
+
+  def delete(id \\ nil), do: GenServer.call(__MODULE__, {:delete, id})
+
+  def load_page(), do: GenServer.call(__MODULE__, :load_page)
+  def prev_page(limit \\ nil), do: GenServer.call(__MODULE__, {:prev_page, limit})
+  def next_page(limit \\ nil), do: GenServer.call(__MODULE__, {:next_page, limit})
+
+  def decrease_cursor(), do: GenServer.cast(__MODULE__, :decrease_cursor)
+  def increase_cursor(), do: GenServer.cast(__MODULE__, :increase_cursor)
+  def set_cursor(cursor), do: GenServer.cast(__MODULE__, {:set_cursor, cursor})
 
   @impl true
-  def handle_call(:get_state, _from, state), do: {:reply, state, state}
+  def handle_call(:state, _from, state), do: {:reply, state, state}
 
-  @impl true
-  def handle_call(:refresh, _from, state) do
-    limit = max(state.limit, 10)
+  def handle_call({:delete, id}, _from, state) do
+    case state.repository.delete(id) do
+      {:ok, _} ->
+        case refresh(state) do
+          {:ok, new_state} ->
+            {:reply, {:ok, new_state}, new_state}
 
-    case fetch(state, limit, state.offset) do
-      {:ok, new_state} ->
-        {:reply, {:ok, new_state}, new_state}
+          {:error, cause} ->
+            Log.erro(cause)
+            {:reply, {:ok, state}, state}
+        end
 
       {:error, cause} ->
-        Log.erro("An error occurred during work state server refreshing: #{inspect(cause)}")
+        Log.erro("An error occurred during work deleting: #{inspect(cause)}")
+
         {:reply, {:ok, state}, state}
     end
   end
 
-  @impl true
-  def handle_call({:prev, limit}, _from, state) do
+  def handle_call(:load_page, _from, state) do
+    case refresh(state) do
+      {:ok, new_state} ->
+        {:reply, {:ok, new_state}, new_state}
+
+      {:error, cause} ->
+        Log.erro(cause)
+        {:reply, {:ok, state}, state}
+    end
+  end
+
+  def handle_call({:prev_page, limit}, _from, state) do
     limit = limit || state.limit || 10
     offset = max(state.offset - limit, 0)
 
@@ -54,8 +74,7 @@ defmodule ExStorage.Core.Work.StateServer do
     end
   end
 
-  @impl true
-  def handle_call({:next, limit}, _from, state) do
+  def handle_call({:next_page, limit}, _from, state) do
     limit = limit || state.limit || 10
     offset = state.offset + limit
 
@@ -73,18 +92,57 @@ defmodule ExStorage.Core.Work.StateServer do
   end
 
   @impl true
-  def handle_cast(:decrement_cursor, state) do
-    new_cursor = max(state.cursor - 1, 0)
+  def handle_cast(:decrease_cursor, state) do
+    total = length(state.works)
+
+    prev_cursor = state.cursor - 1
+
+    new_cursor =
+      if prev_cursor < 0 do
+        max(total - 1, 0)
+      else
+        prev_cursor
+      end
+
     new_state = %{state | cursor: new_cursor}
     {:noreply, new_state}
   end
 
-  @impl true
-  def handle_cast(:increment_cursor, state) do
+  def handle_cast(:increase_cursor, state) do
     total = length(state.works)
-    new_cursor = min(state.cursor + 1, max(total - 1, 0))
+
+    next_cursor = state.cursor + 1
+    last_cursor = max(total - 1, 0)
+
+    new_cursor =
+      if next_cursor > last_cursor do
+        0
+      else
+        next_cursor
+      end
+
     new_state = %{state | cursor: new_cursor}
     {:noreply, new_state}
+  end
+
+  def handle_cast({:set_cursor, cursor}, state) do
+    total = length(state.works)
+    new_cursor = max(cursor, 0)
+    new_cursor = min(new_cursor, max(total - 1, 0))
+    new_state = %{state | cursor: new_cursor}
+    {:noreply, new_state}
+  end
+
+  defp refresh(state) do
+    limit = max(state.limit, 10)
+
+    case fetch(state, limit, state.offset) do
+      {:ok, new_state} ->
+        {:ok, new_state}
+
+      {:error, cause} ->
+        {:error, "An error occurred during work state server refreshing: #{inspect(cause)}"}
+    end
   end
 
   defp fetch(state, limit, offset) do
