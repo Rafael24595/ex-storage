@@ -100,27 +100,29 @@ defmodule ExStorage.TUI.Screens.WorkTable do
     {:same, state}
   end
 
-  def handle_event(state, {:char, "c"}) do
-    # TODO: Implement.
-    # {ExStorage.TUI.Screens.NewWork, %{}}
-    sample =
-      ExStorage.Domain.Work.from_map(%{
-        "title" => "Sample Work #{:os.system_time(:second)}",
-        "type" => "novel",
-        "creator" => "TUI",
-        "released" => 2025,
-        "concepts" => []
-      })
-
-    case ExStorage.DB.SurrealDB.Work.create(sample) do
-      {:ok, _} ->
-        ExStorage.Core.Work.StateServer.load_page()
-        {:same, state}
-
-      {:error, err} ->
-        Log.erro("An error occured during work creation: #{inspect(err)}")
-        {:same, state}
-    end
+  def handle_event(_state, {:char, "c"}) do
+    modal_state = %{
+      title: "Create new Work",
+      fields: [
+        %{
+          code: "title",
+          title: "Title",
+          type: "string"
+        },
+        %{
+          code: "creator",
+          title: "Creator",
+          type: "string"
+        },
+        %{
+          code: "type",
+          title: "Type",
+          type: "list",
+          values: ["novel", "film", "videogame", "music", "comic"]
+        },
+      ]
+    }
+    {ExStorage.TUI.Screens.ModalForm, modal_state}
   end
 
   def handle_event(_state, {:char, "v"}) do

@@ -35,8 +35,8 @@ defmodule ExStorage.TUI.Screens.ModalConfirm do
 
     max_len = max(String.length(mess_format), String.length(keys_format))
 
-    mess_format = "|#{center_text(mess_format, max_len)}|"
-    keys_format = "|#{center_text(keys_format, max_len)}|"
+    mess_format = "|#{ExStorage.TUI.Screens.Formatter.center_text(mess_format, max_len)}|"
+    keys_format = "|#{ExStorage.TUI.Screens.Formatter.center_text(keys_format, max_len)}|"
 
     limit = String.duplicate("-", String.length(mess_format))
     IO.puts(limit)
@@ -44,12 +44,6 @@ defmodule ExStorage.TUI.Screens.ModalConfirm do
     IO.puts(limit)
     IO.puts(keys_format)
     IO.puts("#{limit}\n")
-  end
-
-  defp center_text(text, max_width) do
-    mid_with = div(max_width + String.length(text), 2)
-    text = String.pad_leading(text, mid_with)
-    String.pad_trailing(text, max_width)
   end
 
   @impl true
