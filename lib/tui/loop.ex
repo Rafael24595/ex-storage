@@ -74,7 +74,7 @@ defmodule ExStorage.TUI.Loop do
         {:noreply, new_state}
 
       other ->
-        Log.erro("TUI: unexpected result from handle_event: #{inspect(other)}")
+        Log.error("TUI: unexpected result from handle_event: #{inspect(other)}")
         {:noreply, state}
     end
   end
@@ -94,7 +94,7 @@ defmodule ExStorage.TUI.Loop do
       screen_mod.onload(scr_state)
     rescue
       err ->
-        Log.erro("An error occurred during screen #{inspect(screen_mod)} loading: #{inspect(err)}")
+        Log.error("An error occurred during screen #{inspect(screen_mod)} loading: #{inspect(err)}")
     end
 
     {:noreply, state}
@@ -107,7 +107,7 @@ defmodule ExStorage.TUI.Loop do
       screen_mod.render(scr_state)
     rescue
       err ->
-        Log.erro("An error occurred during screen #{inspect(screen_mod)} rendering: #{inspect(err)}")
+        Log.error("An error occurred during screen #{inspect(screen_mod)} rendering: #{inspect(err)}")
     end
 
     {:noreply, state}
@@ -118,7 +118,7 @@ defmodule ExStorage.TUI.Loop do
       screen_mod.handle_event(scr_state, event)
     rescue
       err ->
-        Log.erro("An error occurred during event handling from #{inspect(screen_mod)}: #{inspect(err)}")
+        Log.error("An error occurred during event handling from #{inspect(screen_mod)}: #{inspect(err)}")
         {:same, scr_state}
     end
   end

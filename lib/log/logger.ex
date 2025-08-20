@@ -16,8 +16,9 @@ defmodule ExStorage.Log.Logger do
 
   def records, do: GenServer.call(__MODULE__, :records)
   def info(message), do: GenServer.cast(__MODULE__, {:record, "INFO", message})
-  def erro(message), do: GenServer.cast(__MODULE__, {:record, "ERRO", message})
   def warn(message), do: GenServer.cast(__MODULE__, {:record, "WARN", message})
+  def error(message), do: GenServer.cast(__MODULE__, {:record, "ERROR", message})
+  def debug(message), do: GenServer.cast(__MODULE__, {:record, "DEBUG", message})
 
   @impl true
   def init(state), do: {:ok, state}

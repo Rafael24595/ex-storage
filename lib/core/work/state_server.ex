@@ -35,12 +35,12 @@ defmodule ExStorage.Core.Work.StateServer do
             {:reply, {:ok, new_state}, new_state}
 
           {:error, cause} ->
-            Log.erro(cause)
+            Log.error(cause)
             {:reply, {:ok, state}, state}
         end
 
       {:error, cause} ->
-        Log.erro("An error occurred during work deleting: #{inspect(cause)}")
+        Log.error("An error occurred during work deleting: #{inspect(cause)}")
 
         {:reply, {:ok, state}, state}
     end
@@ -52,7 +52,7 @@ defmodule ExStorage.Core.Work.StateServer do
         {:reply, {:ok, new_state}, new_state}
 
       {:error, cause} ->
-        Log.erro(cause)
+        Log.error(cause)
         {:reply, {:ok, state}, state}
     end
   end
@@ -66,7 +66,7 @@ defmodule ExStorage.Core.Work.StateServer do
         {:reply, {:ok, new_state}, new_state}
 
       {:error, cause} ->
-        Log.erro(
+        Log.error(
           "An error occurred during work state server previous page fetching: #{inspect(cause)}"
         )
 
@@ -83,7 +83,7 @@ defmodule ExStorage.Core.Work.StateServer do
         {:reply, {:ok, new_state}, new_state}
 
       {:error, cause} ->
-        Log.erro(
+        Log.error(
           "An error occurred during work state server next page fetching: #{inspect(cause)}"
         )
 

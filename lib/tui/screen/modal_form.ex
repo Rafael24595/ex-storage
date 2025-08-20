@@ -240,9 +240,7 @@ defmodule ExStorage.TUI.Screens.ModalForm do
   end
 
   def manage_text_as_list_item(state, field, text) do
-    Log.debug("#{inspect(field.values)} - #{text}")
     index = Enum.find_index(field.values, fn v -> v == text end)
-    Log.debug("#{index}")
 
     if index != nil do
       values = Map.get(state, :values, %{})
