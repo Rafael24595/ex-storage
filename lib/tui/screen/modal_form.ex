@@ -1,6 +1,8 @@
 defmodule ExStorage.TUI.Screens.ModalForm do
   @behaviour ExStorage.TUI.Screen
 
+  alias ExStorage.Core.Utils
+
   @impl true
   def onload(state) do
     render(state)
@@ -16,7 +18,7 @@ defmodule ExStorage.TUI.Screens.ModalForm do
     rows =
       Enum.zip(titles, values)
       |> Enum.map(fn {t, v} ->
-        "#{t}#{v}"
+        "#{t}#{v}   "
       end)
 
     max_len =
@@ -41,13 +43,9 @@ defmodule ExStorage.TUI.Screens.ModalForm do
 
     IO.puts(limit)
 
-    commands = [
-      {"s", "save"},
-      {"c", "cancel"},
-      {"q", "quit"}
-    ]
+    options = Map.get(state, :options)
 
-    ExStorage.TUI.Screens.Modules.commands(commands)
+    ExStorage.TUI.Screens.Modules.commands(options)
   end
 
   def format_titles(state) do
@@ -93,6 +91,9 @@ defmodule ExStorage.TUI.Screens.ModalForm do
       value = Map.get(values, code)
 
       case type do
+        "enum" ->
+          format_enum_value(f, value)
+
         "list" ->
           format_list_value(f, value)
 
@@ -102,10 +103,27 @@ defmodule ExStorage.TUI.Screens.ModalForm do
     end)
   end
 
-  def format_list_value(field, value) do
-    position = list_value_index(field, value)
+  def format_enum_value(field, value) do
+    values = Map.get(field, :values, [])
+    position = list_value_index(field, values, value)
 
-    ExStorage.TUI.Screens.Formatter.list_preview(field.values, position, 2)
+    ExStorage.TUI.Screens.Formatter.list_preview(values, position, %{
+      radius: 2,
+      start_char: "|",
+      close_char: "|"
+    })
+  end
+
+  def format_list_value(field, value) do
+    values = list_or_default(field, value)
+
+    position = list_value_index(field, values, value)
+
+    ExStorage.TUI.Screens.Formatter.list_preview(values, position, %{
+      radius: 2,
+      start_char: "[",
+      close_char: "]"
+    })
   end
 
   def format_text_value(field, value) do
@@ -130,7 +148,7 @@ defmodule ExStorage.TUI.Screens.ModalForm do
       cursor = Map.get(state, :cursor)
       fields = Map.get(state, :fields)
 
-      new_cursor = ExStorage.TUI.Screens.Utils.decrement_cursor(cursor, fields)
+      new_cursor = Utils.decrease_cursor(cursor, fields)
 
       {:same, Map.put(state, :cursor, new_cursor)}
     end
@@ -145,18 +163,18 @@ defmodule ExStorage.TUI.Screens.ModalForm do
       cursor = Map.get(state, :cursor)
       fields = Map.get(state, :fields)
 
-      new_cursor = ExStorage.TUI.Screens.Utils.increment_cursor(cursor, fields)
+      new_cursor = Utils.increase_cursor(cursor, fields)
 
       {:same, Map.put(state, :cursor, new_cursor)}
     end
   end
 
   def handle_event(state, :left) do
-    manage_list(state, &ExStorage.TUI.Screens.Utils.decrement_cursor/2)
+    list_navigate(state, &Utils.decrease_cursor/2)
   end
 
   def handle_event(state, :right) do
-    manage_list(state, &ExStorage.TUI.Screens.Utils.increment_cursor/2)
+    list_navigate(state, &Utils.increase_cursor/2)
   end
 
   def handle_event(state, :enter) do
@@ -171,25 +189,34 @@ defmodule ExStorage.TUI.Screens.ModalForm do
     {:same, Map.put(state, :select, select)}
   end
 
-  def handle_event(state, {:char, "q"}) do
+  def handle_event(state, {:char, text}) do
     select = Map.get(state, :select, false)
 
-    if select do
-      manage_text(state, "q")
+    if !select do
+      manage_option(state, text)
     else
-      {:quit, state}
-    end
-  end
+      cursor = Map.get(state, :cursor, 0)
+      fields = Map.get(state, :fields)
+      field = Enum.at(fields, cursor)
 
-  def handle_event(state, {:char, text}) do
-    manage_text(state, text)
+      case field_type(field) do
+        "enum" ->
+          manage_text_as_enum_item(state, field, text)
+
+        "list" ->
+          manage_text_as_list_action(state, field, text)
+
+        _ ->
+          manage_text_as_string(state, field, text)
+      end
+    end
   end
 
   def handle_event(state, _) do
     {:keep, state}
   end
 
-  def manage_list(state, mod_func) do
+  def list_navigate(state, mod_func) do
     select = Map.get(state, :select, false)
 
     if !select do
@@ -199,47 +226,62 @@ defmodule ExStorage.TUI.Screens.ModalForm do
       fields = Map.get(state, :fields)
       field = Enum.at(fields, cursor)
 
-      if "list" != field_type(field) do
+      case field_type(field) do
+        type when type not in ["enum", "list"] ->
+          {:same, state}
+
+        type ->
+          values = Map.get(state, :values, %{})
+          value = Map.get(values, field.code, %{})
+
+          list =
+            case type do
+              "enum" ->
+                Map.get(field, :values, [])
+
+              "list" ->
+                list_or_default(field, value)
+            end
+
+          position = list_value_index(field, list, value)
+
+          new_cursor = mod_func.(position, list)
+
+          value =
+            value
+            |> Map.put(:code, field.code)
+            |> Map.put(:cursor, new_cursor)
+
+          values = Map.put(values, field.code, value)
+
+          {:same, Map.put(state, :values, values)}
+      end
+    end
+  end
+
+  def manage_option(state, char) do
+    options = Map.get(state, :options)
+    cursor = Enum.find_index(options, fn {c, _, _} -> c == char end)
+
+    if cursor != nil do
+      {_, _, func} = Enum.at(options, cursor)
+      func.(state)
+    else
+      fields = Map.get(state, :fields)
+
+      new_cursor =
+        fields
+        |> Enum.find_index(fn f -> Utils.equal_ignore_case?(f.title, char) end)
+
+      if new_cursor != nil do
+        {:same, Map.put(state, :cursor, new_cursor)}
+      else
         {:same, state}
-      else
-        values = Map.get(state, :values, %{})
-        value = Map.get(values, field.code)
-
-        position = list_value_index(field, value)
-
-        new_cursor = mod_func.(position, field.values)
-
-        value = %{
-          code: field.code,
-          value: new_cursor
-        }
-
-        values = Map.put(values, field.code, value)
-
-        {:same, Map.put(state, :values, values)}
       end
     end
   end
 
-  def manage_text(state, text) do
-    select = Map.get(state, :select, false)
-
-    if !select do
-      {:same, state}
-    else
-      cursor = Map.get(state, :cursor, 0)
-      fields = Map.get(state, :fields)
-      field = Enum.at(fields, cursor)
-
-      if "list" == field_type(field) do
-        manage_text_as_list_item(state, field, text)
-      else
-        manage_text_as_string(state, field, text)
-      end
-    end
-  end
-
-  def manage_text_as_list_item(state, field, text) do
+  def manage_text_as_enum_item(state, field, text) do
     index = Enum.find_index(field.values, fn v -> v == text end)
 
     if index != nil do
@@ -247,7 +289,7 @@ defmodule ExStorage.TUI.Screens.ModalForm do
 
       value = %{
         code: field.code,
-        value: index
+        cursor: index
       }
 
       values = Map.put(values, field.code, value)
@@ -256,6 +298,100 @@ defmodule ExStorage.TUI.Screens.ModalForm do
     else
       {:same, state}
     end
+  end
+
+  def manage_text_as_list_action(state, field, text) do
+    # TODO
+    {first, rest} = String.next_grapheme(text)
+    rest = String.trim(rest)
+
+    case first do
+      "\\" ->
+        {first, rest} = String.next_grapheme(rest)
+        rest = String.trim(rest)
+
+        case first do
+          "d" ->
+            delete_list(state, field, rest)
+
+          "h" ->
+            Log.debug("head")
+
+          "t" ->
+            Log.debug("tail")
+
+          "r" ->
+            Log.debug("replace")
+
+          _ ->
+            define_list(state, field, rest)
+        end
+
+      _ ->
+        define_list(state, field, text)
+    end
+  end
+
+  defp delete_list(state, field, text) do
+    values = Map.get(state, :values, %{})
+
+    if text == "*" do
+      values = Map.delete(values, field.code)
+      {:same, state |> Map.put(:values, values) |> Map.put(:select, false)}
+    else
+      case Map.get(values, field.code) do
+        nil ->
+          {:same, Map.put(state, :values, values)}
+
+        value ->
+          list = Map.get(value, :value, [])
+
+          index =
+            Enum.find_index(list, fn t -> t == text end) ||
+              list_value_index(field, list, value)
+
+          list = List.delete_at(list, index)
+
+          index = max(index - 1, 0)
+
+          value = %{
+            code: field.code,
+            cursor: index,
+            value: list
+          }
+
+          values = Map.put(values, field.code, value)
+          {:same, Map.put(state, :values, values)}
+      end
+    end
+  end
+
+  defp define_list(state, field, text) do
+    values = Map.get(state, :values, %{})
+    list = text_to_list(text)
+
+    values =
+      cond do
+        length(list) == 0 ->
+          Map.delete(values, field.code)
+
+        true ->
+          value = %{
+            code: field.code,
+            value: list
+          }
+
+          Map.put(values, field.code, value)
+      end
+
+    {:same, state |> Map.put(:values, values) |> Map.put(:select, false)}
+  end
+
+  defp text_to_list(text) do
+    text
+    |> String.split(" ")
+    |> Enum.filter(fn t -> t != "" end)
+    |> Enum.map(&String.trim/1)
   end
 
   defp manage_text_as_string(state, field, text) do
@@ -277,41 +413,31 @@ defmodule ExStorage.TUI.Screens.ModalForm do
     {:same, Map.put(state, :values, values)}
   end
 
-  def list_value_index(field, value) do
-    cond do
-      value == nil || value.value == nil ->
-        default = Map.get(field, :default)
+  def list_value_index(field, values, value) do
+    cursor = Map.get(value || %{}, :cursor)
 
-        content =
-          if default == nil do
-            hd(field.values)
-          else
-            default
-          end
+    case cursor do
+      nil ->
+        search_default_index(field, values)
 
-        index =
-          field.values
-          |> Enum.find_index(fn v -> v == content end)
+      cursor when is_number(cursor) ->
+        cursor
 
-        if index != nil do
-          index
-        else
-          0
-        end
-
-      is_number(value.value) ->
-        value.value
-
-      true ->
+      _ ->
         0
     end
   end
 
+  def search_default_index(field, values) do
+    content = Map.get(field, :default) || List.first(values, "")
+    Enum.find_index(values, fn v -> v == content end) || 0
+  end
+
+  def list_or_default(field, value) do
+    Map.get(value || %{}, :value) || Map.get(field, :values, [])
+  end
+
   def field_type(field) do
-    if field == nil || field.type == nil do
-      "string"
-    else
-      field.type
-    end
+    Map.get(field || %{}, :type, "string")
   end
 end

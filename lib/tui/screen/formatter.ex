@@ -65,7 +65,11 @@ defmodule ExStorage.TUI.Screens.Formatter do
     String.pad_trailing(text, max_width)
   end
 
-  def list_preview(list, cursor, radius) do
+  def list_preview(list, cursor, opts) do
+    radius = Map.get(opts, :radius, 2)
+    start_char = Map.get(opts, :start_char, "|")
+    close_char = Map.get(opts, :close_char, "|")
+
     len = length(list)
     last = len - 1
 
@@ -90,25 +94,29 @@ defmodule ExStorage.TUI.Screens.Formatter do
         {from, to}
       end
 
-    slice = Enum.slice(list, from..to)
+    if to < 0 do
+      "#0 #{start_char} ... #{close_char}"
+    else
+      slice = Enum.slice(list, from..to)
 
-    max_len =
-      list
-      |> Enum.map(&String.length/1)
-      |> Enum.max()
+      max_len =
+        list
+        |> Enum.map(&String.length/1)
+        |> Enum.max()
 
-    preview =
-      slice
-      |> Enum.with_index(from)
-      |> Enum.map(fn {item, idx} ->
-        item = " #{center_text(item, max_len)} "
-        if idx == cursor, do: " {#{item}} ", else: item
-      end)
-      |> Enum.join("|")
+      preview =
+        slice
+        |> Enum.with_index(from)
+        |> Enum.map(fn {item, idx} ->
+          item = " #{center_text(item, max_len)} "
+          if idx == cursor, do: " {#{item}} ", else: item
+        end)
+        |> Enum.join("|")
 
-    left = if from > 0, do: "<", else: "|"
-    right = if to < len - 1, do: ">", else: "|"
+      left = if from > 0, do: "<", else: start_char
+      right = if to < len - 1, do: ">", else: close_char
 
-    " #{left}#{preview}#{right} "
+      "##{length(list)} #{left}#{preview}#{right}"
+    end
   end
 end

@@ -1,10 +1,13 @@
 defmodule ExStorage.TUI.Screens.Modules do
   def commands(commands) do
     header = "[ Commands ] "
-    commands = Enum.reduce(commands, "", fn
-      {k, d}, acc -> acc <> "#{d}(#{k}) "
-      {k}, acc -> acc <> "#{k}  "
-    end)
+
+    commands =
+      Enum.map_join(commands, " ", fn
+        {k, d, _f} -> "#{d}(#{k})"
+        {k, d} -> "#{d}(#{k})"
+        k -> "#{k} "
+      end)
 
     fix_len = max(String.length(commands) - String.length(header), 3)
     fix = String.duplicate("=", fix_len)

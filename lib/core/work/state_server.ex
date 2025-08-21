@@ -93,34 +93,13 @@ defmodule ExStorage.Core.Work.StateServer do
 
   @impl true
   def handle_cast(:decrease_cursor, state) do
-    total = length(state.works)
-
-    prev_cursor = state.cursor - 1
-
-    new_cursor =
-      if prev_cursor < 0 do
-        max(total - 1, 0)
-      else
-        prev_cursor
-      end
-
+    new_cursor = ExStorage.Core.Utils.decrease_cursor(state.cursor, state.works)
     new_state = %{state | cursor: new_cursor}
     {:noreply, new_state}
   end
 
   def handle_cast(:increase_cursor, state) do
-    total = length(state.works)
-
-    next_cursor = state.cursor + 1
-    last_cursor = max(total - 1, 0)
-
-    new_cursor =
-      if next_cursor > last_cursor do
-        0
-      else
-        next_cursor
-      end
-
+    new_cursor = ExStorage.Core.Utils.increase_cursor(state.cursor, state.works)
     new_state = %{state | cursor: new_cursor}
     {:noreply, new_state}
   end

@@ -1,5 +1,5 @@
-defmodule ExStorage.TUI.Screens.Utils do
-  def decrement_cursor(cursor, options) do
+defmodule ExStorage.Core.Utils do
+  def decrease_cursor(cursor, options) do
     cursor = cursor || 0
     options = options || []
 
@@ -10,7 +10,7 @@ defmodule ExStorage.TUI.Screens.Utils do
     end
   end
 
-  def increment_cursor(cursor, options) do
+  def increase_cursor(cursor, options) do
     cursor = cursor || 0
     options = options || []
 
@@ -19,5 +19,9 @@ defmodule ExStorage.TUI.Screens.Utils do
     else
       cursor + 1
     end
+  end
+
+  def equal_ignore_case?(a, b) do
+    String.downcase(a) == String.downcase(b)
   end
 end

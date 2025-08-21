@@ -115,11 +115,21 @@ defmodule ExStorage.TUI.Screens.WorkTable do
           type: "string"
         },
         %{
+          code: "tags",
+          title: "Tags",
+          type: "list"
+        },
+        %{
           code: "type",
           title: "Type",
-          type: "list",
+          type: "enum",
           values: ["novel", "film", "videogame", "music", "comic"]
         },
+      ],
+      options: [
+        {"s", "save", fn _state -> back() end},
+        {"c", "cancel", fn _state -> back() end},
+        {"q", "quit", fn state -> quit(state) end}
       ]
     }
     {ExStorage.TUI.Screens.ModalForm, modal_state}
