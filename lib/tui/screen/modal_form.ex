@@ -179,7 +179,7 @@ defmodule ExStorage.TUI.Screens.ModalForm do
     {:keep, state}
   end
 
-   defp move_cursor(state, :up, false) do
+  defp move_cursor(state, :up, false) do
     cursor = Map.get(state, :cursor)
     fields = Map.get(state, :fields)
 
@@ -301,34 +301,29 @@ defmodule ExStorage.TUI.Screens.ModalForm do
   end
 
   def manage_text_as_list_action(state, field, text) do
-    # TODO
-    {first, rest} = String.next_grapheme(text)
-    rest = String.trim(rest)
+    case Utils.parse_command(text) do
+      {:cmd, "d", rest} ->
+        delete_list(state, field, rest)
 
-    case first do
-      "\\" ->
-        {first, rest} = String.next_grapheme(rest)
-        rest = String.trim(rest)
+      {:cmd, "h", rest} ->
+        append_to_list(state, field, rest, :head)
 
-        case first do
-          "d" ->
-            delete_list(state, field, rest)
+      {:cmd, "t", rest} ->
+        append_to_list(state, field, rest, :tail)
 
-          "h" ->
-            Log.debug("head")
+      {:cmd, "c", rest} ->
+        append_to_list(state, field, rest, :cursor)
 
-          "t" ->
-            Log.debug("tail")
+      {:cmd, "r", rest} ->
+        append_to_list(state, field, rest, :replace)
 
-          "r" ->
-            Log.debug("replace")
+      {:cmd, _, rest} ->
+        list = text_to_list(rest)
+        define_list(state, field, list)
 
-          _ ->
-            define_list(state, field, rest)
-        end
-
-      _ ->
-        define_list(state, field, text)
+      {:text, text} ->
+        list = text_to_list(text)
+        define_list(state, field, list)
     end
   end
 
@@ -380,25 +375,81 @@ defmodule ExStorage.TUI.Screens.ModalForm do
     end
   end
 
-  defp define_list(state, field, text) do
-    values = Map.get(state, :values, %{})
-    list = text_to_list(text)
-
+  defp define_list(state, field, []) do
     values =
-      cond do
-        length(list) == 0 ->
-          Map.delete(values, field.code)
-
-        true ->
-          value = %{
-            code: field.code,
-            value: list
-          }
-
-          Map.put(values, field.code, value)
-      end
+      state
+      |> Map.get(:values, %{})
+      |> Map.delete(field.code)
 
     {:same, state |> Map.put(:values, values) |> Map.put(:select, false)}
+  end
+
+  defp define_list(state, field, list) do
+    value = %{
+      code: field.code,
+      value: list
+    }
+
+    values =
+      state
+      |> Map.get(:values, %{})
+      |> Map.put(field.code, value)
+
+    {:same, state |> Map.put(:values, values) |> Map.put(:select, false)}
+  end
+
+  defp append_to_list(state, field, text, :head) do
+    current =
+      state
+      |> Map.get(:values, %{})
+      |> Map.get(field.code, %{})
+      |> Map.get(:value, [])
+
+    list =
+      text
+      |> text_to_list()
+      |> Enum.concat(current)
+
+    define_list(state, field, list)
+  end
+
+  defp append_to_list(state, field, text, :tail) do
+    list =
+      state
+      |> Map.get(:values, %{})
+      |> Map.get(field.code, %{})
+      |> Map.get(:value, [])
+      |> Enum.concat(text_to_list(text))
+
+    define_list(state, field, list)
+  end
+
+  defp append_to_list(state, field, text, :cursor) do
+    value =
+      state
+      |> Map.get(:values, %{})
+      |> Map.get(field.code, %{})
+
+    list = list_or_default(field, value)
+    cursor = list_value_index(field, list, value)
+
+    list = ListUtils.concat_at(list, text_to_list(text), cursor)
+
+    define_list(state, field, list)
+  end
+
+  defp append_to_list(state, field, text, :replace) do
+    value =
+      state
+      |> Map.get(:values, %{})
+      |> Map.get(field.code, %{})
+
+    list = list_or_default(field, value)
+    cursor = list_value_index(field, list, value)
+
+    list = ListUtils.replace_at(list, text_to_list(text), cursor)
+
+    define_list(state, field, list)
   end
 
   defp text_to_list(text) do
