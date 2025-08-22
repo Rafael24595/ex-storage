@@ -1,5 +1,7 @@
 defmodule ExStorage.Domain.Work do
-  @type work_type :: :novel | :movie | :game | :other
+
+  #TODO: Redefine as atoms.
+  @types ["novel", "film", "videogame", "other"]
 
   @enforce_keys [:title, :type]
   defstruct [
@@ -27,7 +29,7 @@ defmodule ExStorage.Domain.Work do
       type: Map.get(map, "type"),
       creator: Map.get(map, "creator"),
       released: Map.get(map, "released"),
-      concepts: Map.get(map, "concepts", []),
+      concepts: Map.get(map, "concepts", [])
     }
   end
 
@@ -39,5 +41,31 @@ defmodule ExStorage.Domain.Work do
       released: work.released,
       concepts: work.concepts || []
     }
+  end
+
+  def definition() do
+    [
+      %{
+        code: "title",
+        title: "Title",
+        type: "string"
+      },
+      %{
+        code: "creator",
+        title: "Creator",
+        type: "string"
+      },
+      %{
+        code: "tags",
+        title: "Tags",
+        type: "list"
+      },
+      %{
+        code: "type",
+        title: "Type",
+        type: "enum",
+        values: @types
+      }
+    ]
   end
 end

@@ -2,8 +2,6 @@ defmodule ExStorage.TUI.Loop do
   use GenServer
   alias ExStorage.TUI.Input
 
-  @default_screen ExStorage.TUI.Screens.WorkTable
-
   def start_link(_args) do
     GenServer.start_link(__MODULE__, :ok, name: __MODULE__)
   end
@@ -12,15 +10,15 @@ defmodule ExStorage.TUI.Loop do
   def init(:ok) do
     Terminal.enable_raw_mode()
 
-    state = %{
-      screen: @default_screen,
-      screen_state: %{}
+    screen = %{
+      module: ExStorage.TUI.Screens.WorkTable,
+      state: ExStorage.TUI.Screens.WorkTable.new_state()
     }
 
     {:ok, _task} = Task.start_link(fn -> input_loop(self()) end)
 
     send(self(), :onload)
-    {:ok, state}
+    {:ok, screen}
   end
 
   @impl true
@@ -29,15 +27,15 @@ defmodule ExStorage.TUI.Loop do
     :ok
   end
 
-  def show_screen(screen_module, screen_state \\ %{}) when is_atom(screen_module) do
-    GenServer.cast(__MODULE__, {:switch_screen, screen_module, screen_state})
+  # TODO: Evalue use.
+  def show_screen(module, state \\ %{}) when is_atom(module) do
+    GenServer.cast(__MODULE__, {:switch_screen, module, state})
   end
 
+  # TODO: Evalue use.
   def send_event(event) do
     GenServer.cast(__MODULE__, {:external_event, event})
   end
-
-  defp clear, do: IO.write("\e[2J\e[H")
 
   defp input_loop(server) do
     case Input.read_event() do
@@ -51,75 +49,96 @@ defmodule ExStorage.TUI.Loop do
   end
 
   @impl true
-  def handle_cast({:input, event}, %{screen: screen_mod, screen_state: scr_state} = state) do
-    case safe_handle_event(screen_mod, scr_state, event) do
-      {:quit, _next_scr_state} ->
+  def handle_cast({:input, event}, %{module: module, state: state} = screen) do
+    case safe_handle_event(module, state, event) do
+      {:quit, _new_state} ->
         Terminal.disable_raw_mode()
         IO.puts("\nExiting...")
         System.halt(0)
-        {:stop, :normal, state}
+        {:stop, screen}
 
-      {:same, next_scr_state} ->
-        new_state = %{state | screen_state: next_scr_state}
+      {:same, new_state} ->
+        new_screen = Map.put(screen, :state, new_state)
         send(self(), :render)
-        {:noreply, new_state}
+        {:noreply, new_screen}
 
-      {:keep, next_scr_state} ->
-        new_state = %{state | screen_state: next_scr_state}
-        {:noreply, new_state}
+      {:keep, new_state} ->
+        new_screen = Map.put(screen, :state, new_state)
+        {:noreply, new_screen}
 
-      {next_screen_mod, next_scr_state} when is_atom(next_screen_mod) ->
-        new_state = %{state | screen: next_screen_mod, screen_state: next_scr_state}
+      {new_module, new_state} when is_atom(new_module) ->
+        new_screen =
+          screen
+          |> Map.put(:module, new_module)
+          |> Map.put(:state, new_state)
+
         send(self(), :onload)
-        {:noreply, new_state}
+        {:noreply, new_screen}
 
       other ->
         Log.error("TUI: unexpected result from handle_event: #{inspect(other)}")
-        {:noreply, state}
+        {:noreply, screen}
     end
   end
 
+  # TODO: Evalue use.
   def handle_cast({:external_event, event}, state), do: handle_cast({:input, event}, state)
 
-  def handle_cast({:switch_screen, screen_mod, screen_state}, state) do
-    new_state = %{state | screen: screen_mod, screen_state: screen_state}
+  # TODO: Evalue use.
+  def handle_cast({:switch_screen, module, state}, screen) do
+    new_screen =
+      screen
+      |> Map.put(:module, module)
+      |> Map.put(:state, state)
+
     send(self(), :render)
-    {:noreply, new_state}
+    {:noreply, new_screen}
   end
 
   @impl true
-  def handle_info(:onload, %{screen: screen_mod, screen_state: scr_state} = state) do
-    clear()
+  def handle_info(:onload, %{module: module, state: state} = screen) do
+    Terminal.clear()
+
     try do
-      screen_mod.onload(scr_state)
+      module.onload(state)
     rescue
       err ->
-        Log.error("An error occurred during screen #{inspect(screen_mod)} loading: #{inspect(err)}")
+        message =
+          "An error occurred during screen loading from #{inspect(module)} with state #{inspect(state)}"
+
+        Log.error(message, err)
     end
 
-    {:noreply, state}
+    {:noreply, screen}
   end
 
-  @impl true
-  def handle_info(:render, %{screen: screen_mod, screen_state: scr_state} = state) do
-    clear()
+  def handle_info(:render, %{module: module, state: state} = screen) do
+    Terminal.clear()
+
     try do
-      screen_mod.render(scr_state)
+      module.render(state)
     rescue
       err ->
-        Log.error("An error occurred during screen #{inspect(screen_mod)} rendering: #{inspect(err)}")
+        message =
+          "An error occurred during screen rendering from #{inspect(module)} with state #{inspect(state)}."
+
+        Log.error(message, err)
     end
 
-    {:noreply, state}
+    {:noreply, screen}
   end
 
-  defp safe_handle_event(screen_mod, scr_state, event) do
+  defp safe_handle_event(module, state, event) do
     try do
-      screen_mod.handle_event(scr_state, event)
+      module.handle_event(state, event)
     rescue
       err ->
-        Log.error("An error occurred during event handling from #{inspect(screen_mod)}: #{inspect(err)}")
-        {:same, scr_state}
+        message =
+          "An error occurred during event handling from #{inspect(module)} with state #{inspect(state)}."
+
+        Log.error(message, err)
+
+        {:same, state}
     end
   end
 end

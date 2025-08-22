@@ -1,4 +1,6 @@
 defmodule Terminal do
+  def clear, do: IO.write("\e[2J\e[H")
+  
   def enable_raw_mode do
     if unix?() do
       System.cmd("stty", ["-echo", "raw"])

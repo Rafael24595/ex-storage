@@ -1,6 +1,10 @@
 defmodule ExStorage.TUI.Screens.WorkTable do
   @behaviour ExStorage.TUI.Screen
 
+  def new_state() do
+    %{}
+  end
+
   @impl true
   def onload(state) do
     ExStorage.Core.Work.StateServer.load_page()
@@ -38,13 +42,15 @@ defmodule ExStorage.TUI.Screens.WorkTable do
     ExStorage.TUI.Screens.Modules.commands(commands)
   end
 
-  def print_sources_list(header, rows, formatter) do
+  defp print_sources_list(header, rows, formatter) do
     header = " #{header} "
 
-    rows = Enum.with_index(rows)
-    |> Enum.map(formatter)
+    rows =
+      Enum.with_index(rows)
+      |> Enum.map(formatter)
 
     header_len = String.length(header)
+
     max_len =
       rows
       |> Enum.map(&String.length/1)
@@ -101,42 +107,20 @@ defmodule ExStorage.TUI.Screens.WorkTable do
   end
 
   def handle_event(_state, {:char, "c"}) do
-    modal_state = %{
-      title: "Create new Work",
-      fields: [
-        %{
-          code: "title",
-          title: "Title",
-          type: "string"
-        },
-        %{
-          code: "creator",
-          title: "Creator",
-          type: "string"
-        },
-        %{
-          code: "tags",
-          title: "Tags",
-          type: "list"
-        },
-        %{
-          code: "type",
-          title: "Type",
-          type: "enum",
-          values: ["novel", "film", "videogame", "music", "comic"]
-        },
-      ],
-      options: [
-        {"s", "save", fn _state -> back() end},
-        {"c", "cancel", fn _state -> back() end},
-        {"q", "quit", fn state -> quit(state) end}
-      ]
-    }
-    {ExStorage.TUI.Screens.ModalForm, modal_state}
+    {ExStorage.TUI.Screens.ModalForm,
+     ExStorage.TUI.Screens.ModalForm.new_state(
+       "Create new Work",
+       ExStorage.Domain.Work.definition(),
+       [
+         {"s", "save", fn _state -> back() end},
+         {"c", "cancel", fn _state -> back() end},
+         {"q", "quit", fn state -> quit(state) end}
+       ]
+     )}
   end
 
   def handle_event(_state, {:char, "v"}) do
-    {ExStorage.TUI.Screens.WorkView, %{}}
+    {ExStorage.TUI.Screens.WorkView, ExStorage.TUI.Screens.WorkView.new_state()}
   end
 
   def handle_event(_state, {:char, "d"}) do
@@ -144,14 +128,14 @@ defmodule ExStorage.TUI.Screens.WorkTable do
     work = Enum.at(work_state.works, work_state.cursor)
 
     {ExStorage.TUI.Screens.ModalConfirm,
-     %{
-       message: "The element '#{work.id}' will be deleted, are you sure?",
-       options: [
+     ExStorage.TUI.Screens.ModalConfirm.new_state(
+       "The element '#{work.id}' will be deleted, are you sure?",
+       [
          {"y", "yes", fn state -> delete(state, work.id) end},
          {"n", "no", fn _state -> back() end},
          {"q", "quit", fn state -> quit(state) end}
        ]
-     }}
+     )}
   end
 
   def handle_event(state, {:char, "q"}), do: {:quit, state}
@@ -161,6 +145,7 @@ defmodule ExStorage.TUI.Screens.WorkTable do
       new_cursor = String.to_integer(digits)
       ExStorage.Core.Work.StateServer.set_cursor(new_cursor)
     end
+
     {:same, state}
   end
 
@@ -168,7 +153,7 @@ defmodule ExStorage.TUI.Screens.WorkTable do
     {:keep, state}
   end
 
-  def delete(state, id) do
+  defp delete(state, id) do
     case ExStorage.Core.Work.StateServer.delete(id) do
       {:same, _} ->
         {:keep, state}
@@ -178,7 +163,7 @@ defmodule ExStorage.TUI.Screens.WorkTable do
     end
   end
 
-  def back(), do: {ExStorage.TUI.Screens.WorkTable, %{}}
+  defp back(), do: {ExStorage.TUI.Screens.WorkTable, new_state()}
 
-  def quit(state), do: {:quit, state}
+  defp quit(state), do: {:quit, state}
 end

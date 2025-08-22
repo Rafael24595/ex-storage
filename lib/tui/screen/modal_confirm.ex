@@ -1,6 +1,14 @@
 defmodule ExStorage.TUI.Screens.ModalConfirm do
   @behaviour ExStorage.TUI.Screen
 
+  def new_state(message, options, cursor \\ nil) do
+    %{
+       message: message,
+       options: options,
+       cursor: cursor || 0
+     }
+  end
+
   @impl true
   def onload(state) do
     render(state)

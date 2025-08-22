@@ -3,6 +3,16 @@ defmodule ExStorage.TUI.Screens.ModalForm do
 
   alias ExStorage.Core.Utils
 
+  def new_state(message, fields, options, values \\ nil, cursor \\ nil) do
+    %{
+       title: message,
+       fields: fields,
+       options: options,
+       values: values || %{},
+       cursor: cursor || 0
+     }
+  end
+
   @impl true
   def onload(state) do
     render(state)

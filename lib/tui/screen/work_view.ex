@@ -1,6 +1,10 @@
 defmodule ExStorage.TUI.Screens.WorkView do
   @behaviour ExStorage.TUI.Screen
 
+  def new_state() do
+    %{}
+  end
+
   @impl true
   def onload(state) do
     render(state)
@@ -49,7 +53,7 @@ defmodule ExStorage.TUI.Screens.WorkView do
 
   @impl true
   def handle_event(_state, {:char, "b"}) do
-    {ExStorage.TUI.Screens.WorkTable, %{}}
+    {ExStorage.TUI.Screens.WorkTable, ExStorage.TUI.Screens.WorkTable.new_state()}
   end
 
   def handle_event(state, {:char, "r"}) do
