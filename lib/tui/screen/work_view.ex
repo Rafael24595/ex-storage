@@ -2,7 +2,9 @@ defmodule ExStorage.TUI.Screens.WorkView do
   @behaviour ExStorage.TUI.Screen
 
   def new_state() do
-    %{}
+    %{
+      show_help: false
+    }
   end
 
   @impl true
@@ -11,6 +13,23 @@ defmodule ExStorage.TUI.Screens.WorkView do
   end
 
   @impl true
+  def render(%{show_help: true} = _state) do
+    actions = [
+      {"b", "Return to the works table."},
+      {"r", "Refresh the page of the current work."},
+      {"q", "Exit the application."}
+    ]
+
+    commands = [
+      {"c", "continue"},
+      {"b", "back"},
+      {"q", "quit"}
+    ]
+
+    ExStorage.TUI.Screens.Modules.help(actions)
+    ExStorage.TUI.Screens.Modules.commands(commands)
+  end
+
   def render(_state) do
     work_state = ExStorage.Core.Work.StateServer.state()
     work = Enum.at(work_state.works, work_state.cursor)
@@ -25,9 +44,10 @@ defmodule ExStorage.TUI.Screens.WorkView do
     print_source_table(work.id, columns)
 
     commands = [
+      {"h", "help"},
       {"b", "back"},
       {"r", "refresh"},
-      {"q", "quit"},
+      {"q", "quit"}
     ]
 
     ExStorage.TUI.Screens.Modules.commands(commands)
@@ -44,19 +64,31 @@ defmodule ExStorage.TUI.Screens.WorkView do
     IO.puts(source)
     IO.puts(limit)
     IO.puts(headers)
+
     Enum.each(rows, fn r ->
       IO.puts(limit)
       IO.puts(r)
     end)
+
     IO.puts(limit)
   end
 
   @impl true
+  def handle_event(%{show_help: false} = state, {:char, "h"}) do
+    state = Map.put(state, :show_help, true)
+    {:same, state}
+  end
+
+  def handle_event(%{show_help: true} = state, {:char, "c"}) do
+    state = Map.put(state, :show_help, false)
+    {:same, state}
+  end
+
   def handle_event(_state, {:char, "b"}) do
     {ExStorage.TUI.Screens.WorkTable, ExStorage.TUI.Screens.WorkTable.new_state()}
   end
 
-  def handle_event(state, {:char, "r"}) do
+  def handle_event(%{show_help: false} = state, {:char, "r"}) do
     ExStorage.Core.Work.StateServer.load_page()
     {:same, state}
   end
@@ -64,6 +96,6 @@ defmodule ExStorage.TUI.Screens.WorkView do
   def handle_event(state, {:char, "q"}), do: {:quit, state}
 
   def handle_event(state, _) do
-    {:keep, state}
+    {:same, state}
   end
 end

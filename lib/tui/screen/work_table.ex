@@ -2,7 +2,9 @@ defmodule ExStorage.TUI.Screens.WorkTable do
   @behaviour ExStorage.TUI.Screen
 
   def new_state() do
-    %{}
+    %{
+      show_help: false
+    }
   end
 
   @impl true
@@ -12,6 +14,27 @@ defmodule ExStorage.TUI.Screens.WorkTable do
   end
 
   @impl true
+  def render(%{show_help: true} = _state) do
+    actions = [
+      {"↑ / ↓", "Move between works on the current page."},
+      {"← / →", "Move between different work pages."},
+      {"number", "Type an index to move the cursor to that work."},
+      {"r", "Refresh the current page."},
+      {"v", "Open a modal with the details of the selected work."},
+      {"c", "Open a form modal to create a new work."},
+      {"d", "Delete the selected work."},
+      {"q", "Exit the application."}
+    ]
+
+    commands = [
+      {"c", "continue"},
+      {"q", "quit"}
+    ]
+
+    ExStorage.TUI.Screens.Modules.help(actions)
+    ExStorage.TUI.Screens.Modules.commands(commands)
+  end
+
   def render(_state) do
     work_state = ExStorage.Core.Work.StateServer.state()
     works = work_state.works
@@ -32,6 +55,7 @@ defmodule ExStorage.TUI.Screens.WorkTable do
     print_sources_list(header, works, formatter)
 
     commands = [
+      {"h", "help"},
       {"r", "refresh"},
       {"v", "view"},
       {"c", "create"},
@@ -69,17 +93,17 @@ defmodule ExStorage.TUI.Screens.WorkTable do
   end
 
   @impl true
-  def handle_event(state, :up) do
+  def handle_event(%{show_help: false} = state, :up) do
     ExStorage.Core.Work.StateServer.decrease_cursor()
     {:same, state}
   end
 
-  def handle_event(state, :down) do
+  def handle_event(%{show_help: false} = state, :down) do
     ExStorage.Core.Work.StateServer.increase_cursor()
     {:same, state}
   end
 
-  def handle_event(state, :left) do
+  def handle_event(%{show_help: false} = state, :left) do
     case ExStorage.Core.Work.StateServer.prev_page() do
       {:same, _} ->
         {:keep, state}
@@ -89,10 +113,10 @@ defmodule ExStorage.TUI.Screens.WorkTable do
     end
   end
 
-  def handle_event(state, :right) do
+  def handle_event(%{show_help: false} = state, :right) do
     case ExStorage.Core.Work.StateServer.next_page() do
       {:same, _} ->
-        {:keep, state}
+        {:same, state}
 
       {:ok, _} ->
         {:same, state}
@@ -101,12 +125,22 @@ defmodule ExStorage.TUI.Screens.WorkTable do
     {:same, state}
   end
 
-  def handle_event(state, {:char, "r"}) do
+  def handle_event(%{show_help: false} = state, {:char, "h"}) do
+    state = Map.put(state, :show_help, true)
+    {:same, state}
+  end
+
+  def handle_event(%{show_help: false} = state, {:char, "r"}) do
     ExStorage.Core.Work.StateServer.load_page()
     {:same, state}
   end
 
-  def handle_event(_state, {:char, "c"}) do
+  def handle_event(%{show_help: true} = state, {:char, "c"}) do
+    state = Map.put(state, :show_help, false)
+    {:same, state}
+  end
+
+  def handle_event(%{show_help: false} = _state, {:char, "c"}) do
     {ExStorage.TUI.Screens.ModalForm,
      ExStorage.TUI.Screens.ModalForm.new_state(
        "Create new Work",
@@ -119,11 +153,11 @@ defmodule ExStorage.TUI.Screens.WorkTable do
      )}
   end
 
-  def handle_event(_state, {:char, "v"}) do
+  def handle_event(%{show_help: false} = _state, {:char, "v"}) do
     {ExStorage.TUI.Screens.WorkView, ExStorage.TUI.Screens.WorkView.new_state()}
   end
 
-  def handle_event(_state, {:char, "d"}) do
+  def handle_event(%{show_help: false} = _state, {:char, "d"}) do
     work_state = ExStorage.Core.Work.StateServer.state()
     work = Enum.at(work_state.works, work_state.cursor)
 
@@ -140,7 +174,7 @@ defmodule ExStorage.TUI.Screens.WorkTable do
 
   def handle_event(state, {:char, "q"}), do: {:quit, state}
 
-  def handle_event(state, {:char, digits}) do
+  def handle_event(%{show_help: false} = state, {:char, digits}) do
     if String.match?(digits, ~r/^\d+$/) do
       new_cursor = String.to_integer(digits)
       ExStorage.Core.Work.StateServer.set_cursor(new_cursor)
@@ -150,7 +184,7 @@ defmodule ExStorage.TUI.Screens.WorkTable do
   end
 
   def handle_event(state, _) do
-    {:keep, state}
+    {:same, state}
   end
 
   defp delete(state, id) do
