@@ -18,7 +18,8 @@ defmodule ExStorage.Log.Logger do
   def info(message), do: GenServer.cast(__MODULE__, {:record, "INFO", message})
   def warn(message), do: GenServer.cast(__MODULE__, {:record, "WARN", message})
   def error(message), do: GenServer.cast(__MODULE__, {:record, "ERROR", message})
-  def debug(message), do: GenServer.cast(__MODULE__, {:record, "DEBUG", message})
+  def debug(message) when is_binary(message), do: GenServer.cast(__MODULE__, {:record, "DEBUG", message})
+  def debug(message), do: GenServer.cast(__MODULE__, {:record, "DEBUG", inspect(message)})
 
   def error(message, cause) do
     message = "#{message}. Cause: #{inspect(cause)}"

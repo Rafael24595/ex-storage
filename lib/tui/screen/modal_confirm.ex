@@ -3,10 +3,11 @@ defmodule ExStorage.TUI.Screens.ModalConfirm do
 
   def new_state(message, options, cursor \\ nil) do
     %{
-       message: message,
-       options: options,
-       cursor: cursor || 0
-     }
+      show_help: false,
+      message: message,
+      options: options,
+      cursor: cursor || 0
+    }
   end
 
   @impl true
@@ -15,6 +16,20 @@ defmodule ExStorage.TUI.Screens.ModalConfirm do
   end
 
   @impl true
+  def render(%{show_help: true} = _state) do
+    actions = [
+      {"← / →", "Navigate between options."},
+      {"text", "Type the name of an option to execute it."},
+    ]
+
+    commands = [
+      {"c", "continue"}
+    ]
+
+    ExStorage.TUI.Screens.Modules.help(actions)
+    ExStorage.TUI.Screens.Modules.commands(commands)
+  end
+
   def render(state) do
     message = Map.get(state, :message)
     options = Map.get(state, :options)
@@ -55,7 +70,7 @@ defmodule ExStorage.TUI.Screens.ModalConfirm do
   end
 
   @impl true
-  def handle_event(state, :left) do
+  def handle_event(%{show_help: false} = state, :left) do
     cursor = Map.get(state, :cursor, 0)
     options = Map.get(state, :options)
 
@@ -69,7 +84,7 @@ defmodule ExStorage.TUI.Screens.ModalConfirm do
     {:same, Map.put(state, :cursor, new_cursor)}
   end
 
-  def handle_event(state, :right) do
+  def handle_event(%{show_help: false} = state, :right) do
     cursor = Map.get(state, :cursor, 0)
     options = Map.get(state, :options)
 
@@ -80,17 +95,27 @@ defmodule ExStorage.TUI.Screens.ModalConfirm do
         cursor + 1
       end
 
-    {:same, Map.put(state, :cursor, new_cursor)}
+    {:same, Map.put(%{show_help: false} = state, :cursor, new_cursor)}
   end
 
-  def handle_event(state, :enter) do
+  def handle_event(%{show_help: false} = state, :enter) do
     cursor = Map.get(state, :cursor, 0)
     options = Map.get(state, :options)
     {_, _, func} = Enum.at(options, cursor)
     func.(state)
   end
 
-  def handle_event(state, {:char, char}) do
+  def handle_event(%{show_help: false} = state, {:char, "h"}) do
+    state = Map.put(state, :show_help, true)
+    {:same, state}
+  end
+
+  def handle_event(%{show_help: true} = state, {:char, "c"}) do
+    state = Map.put(state, :show_help, false)
+    {:same, state}
+  end
+
+  def handle_event(%{show_help: false} = state, {:char, char}) do
     options = Map.get(state, :options)
     cursor = Enum.find_index(options, fn {c, _, _} -> c == char end)
 
@@ -103,6 +128,6 @@ defmodule ExStorage.TUI.Screens.ModalConfirm do
   end
 
   def handle_event(state, _) do
-    {:keep, state}
+    {:same, state}
   end
 end

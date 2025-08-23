@@ -5,12 +5,13 @@ defmodule ExStorage.TUI.Screens.ModalForm do
 
   def new_state(message, fields, options, values \\ nil, cursor \\ nil) do
     %{
-       title: message,
-       fields: fields,
-       options: options,
-       values: values || %{},
-       cursor: cursor || 0
-     }
+      show_help: false,
+      title: message,
+      fields: fields,
+      options: options,
+      values: values || %{},
+      cursor: cursor || 0
+    }
   end
 
   @impl true
@@ -19,6 +20,41 @@ defmodule ExStorage.TUI.Screens.ModalForm do
   end
 
   @impl true
+  def render(%{show_help: true} = _state) do
+    actions = [
+      "Form",
+      {"↑ / ↓", "Navigate between form fields."},
+      {"text", "Type the name of an field (ignore case) to move the cursor."},
+      {"enter",
+       "Fix the cursor to the field to interact with it, or release if already selected."},
+      "\n",
+      "Text input ...",
+      {"text", "Type the value."},
+      "\n",
+      "List input [ ... ]",
+      {"← / →", "Move between list items."},
+      {"text", "Type the values separated by space."},
+      {"\\f", "Type the name of an item to move the cursor."},
+      {"\\d", "If '*' added, clear the list; otherwise delete focused item."},
+      {"\\h", "Append items to head."},
+      {"\\t", "Append items to tail."},
+      {"\\c", "Append items after cursor."},
+      {"\\r", "Append items at cursor position, replacing it."},
+      "\n",
+      "Enum input | ... |",
+      {"← / →", "Move between enum items."},
+      {"text", "Type the name of an item to move the cursor."}
+    ]
+
+    commands = [
+      {"c", "continue"},
+      {"q", "quit"}
+    ]
+
+    ExStorage.TUI.Screens.Modules.help(actions)
+    ExStorage.TUI.Screens.Modules.commands(commands)
+  end
+
   def render(state) do
     title = Map.get(state, :title, "Create item")
 
@@ -53,7 +89,7 @@ defmodule ExStorage.TUI.Screens.ModalForm do
 
     IO.puts(limit)
 
-    options = Map.get(state, :options)
+    options = [{"h", "help"} | Map.get(state, :options, [])]
 
     ExStorage.TUI.Screens.Modules.commands(options)
   end
@@ -180,13 +216,23 @@ defmodule ExStorage.TUI.Screens.ModalForm do
     {:same, Map.put(state, :select, select)}
   end
 
+  def handle_event(%{show_help: false} = state, {:char, "h"}) do
+    state = Map.put(state, :show_help, true)
+    {:same, state}
+  end
+
+  def handle_event(%{show_help: true} = state, {:char, "c"}) do
+    state = Map.put(state, :show_help, false)
+    {:same, state}
+  end
+
   def handle_event(state, {:char, text}) do
     select = Map.get(state, :select, false)
     manage_option(state, text, select)
   end
 
   def handle_event(state, _) do
-    {:keep, state}
+    {:same, state}
   end
 
   defp move_cursor(state, :up, false) do
@@ -312,6 +358,9 @@ defmodule ExStorage.TUI.Screens.ModalForm do
 
   def manage_text_as_list_action(state, field, text) do
     case Utils.parse_command(text) do
+      {:cmd, "f", rest} ->
+        find_list(state, field, rest)
+
       {:cmd, "d", rest} ->
         delete_list(state, field, rest)
 
@@ -335,6 +384,26 @@ defmodule ExStorage.TUI.Screens.ModalForm do
         list = text_to_list(text)
         define_list(state, field, list)
     end
+  end
+
+  def find_list(state, field, text) do
+    values = Map.get(state, :values, %{})
+
+    list =
+      values
+      |> Map.get(field.code, %{})
+      |> Map.get(:value, [])
+
+    cursor = Enum.find_index(list, fn v -> v == text end) || 0
+
+    value = %{
+      code: field.code,
+      cursor: cursor,
+      value: list
+    }
+
+    values = Map.put(values, field.code, value)
+    {:same, Map.put(state, :values, values)}
   end
 
   defp delete_list(state, field, "*") do
