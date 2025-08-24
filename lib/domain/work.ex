@@ -56,6 +56,11 @@ defmodule ExStorage.Domain.Work do
         type: "string"
       },
       %{
+        code: "release",
+        title: "Release",
+        type: "date"
+      },
+      %{
         code: "tags",
         title: "Tags",
         type: "list"

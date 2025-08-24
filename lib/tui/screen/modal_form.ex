@@ -24,26 +24,29 @@ defmodule ExStorage.TUI.Screens.ModalForm do
     actions = [
       "Form",
       {"↑ / ↓", "Navigate between form fields."},
-      {"text", "Type the name of an field (ignore case) to move the cursor."},
+      {"text", "Type the name of an field (ignore case) to move the cursor. Use '*' as a wildcard for any characters."},
       {"enter",
        "Fix the cursor to the field to interact with it, or release if already selected."},
       "\n",
-      "Text input ...",
+      "Text input -> ...",
       {"text", "Type the value."},
       "\n",
-      "List input [ ... ]",
+      "Date input -> yyyy-mm-dd hh:mm:ss",
+      {"text", "Type the date with ISO-8601 format: yyyy-mm-dd or yyyy-mm-dd hh:mm:ss."},
+      "\n",
+      "List input -> [ ... ]",
       {"← / →", "Move between list items."},
       {"text", "Type the values separated by space."},
-      {"\\f", "Type the name of an item to move the cursor."},
+      {"\\f", "Type the name of an item (ignore case) to move the cursor. Use '*' as a wildcard for any characters."},
       {"\\d", "If '*' added, clear the list; otherwise delete focused item."},
       {"\\h", "Append items to head."},
       {"\\t", "Append items to tail."},
       {"\\c", "Append items after cursor."},
       {"\\r", "Append items at cursor position, replacing it."},
       "\n",
-      "Enum input | ... |",
+      "Enum input -> | ... |",
       {"← / →", "Move between enum items."},
-      {"text", "Type the name of an item to move the cursor."}
+      {"text", "Type the name of an item (ignore case) to move the cursor. Use '*' as a wildcard for any characters."}
     ]
 
     commands = [
@@ -143,6 +146,9 @@ defmodule ExStorage.TUI.Screens.ModalForm do
         "list" ->
           format_list_value(f, value)
 
+        "date" ->
+          format_date_value(f, value)
+
         _ ->
           format_text_value(f, value)
       end
@@ -169,6 +175,18 @@ defmodule ExStorage.TUI.Screens.ModalForm do
       start_char: "[",
       close_char: "]"
     })
+  end
+
+  def format_date_value(field, value) do
+    value = Map.get(value || %{}, :value) || Map.get(field, :default)
+
+    case value do
+      millis when is_integer(millis) ->
+        ExStorage.Core.DateUtils.from_millis(millis)
+
+      nil ->
+        ExStorage.Core.DateUtils.date_pattern()
+    end
   end
 
   def format_text_value(field, value) do
@@ -279,6 +297,9 @@ defmodule ExStorage.TUI.Screens.ModalForm do
       "list" ->
         manage_text_as_list_action(state, field, text)
 
+      "date" ->
+        manage_text_as_date(state, field, text)
+
       _ ->
         manage_text_as_string(state, field, text)
     end
@@ -317,17 +338,17 @@ defmodule ExStorage.TUI.Screens.ModalForm do
     end
   end
 
-  def execute_option(state, char, nil) do
+  def execute_option(state, text, nil) do
     fields = Map.get(state, :fields)
 
-    new_cursor =
-      fields
-      |> Enum.find_index(fn f -> Utils.equal_ignore_case?(f.title, char) end)
+    extractor = fn f -> f.title end
 
-    if new_cursor != nil do
-      {:same, Map.put(state, :cursor, new_cursor)}
-    else
-      {:same, state}
+    case Utils.match_index(fields, text, extractor) do
+      nil ->
+        {:same, state}
+
+      cursor ->
+        {:same, Map.put(state, :cursor, cursor)}
     end
   end
 
@@ -338,21 +359,23 @@ defmodule ExStorage.TUI.Screens.ModalForm do
   end
 
   def manage_text_as_enum_item(state, field, text) do
-    index = Enum.find_index(field.values, fn v -> v == text end)
+    extractor = fn f -> f end
 
-    if index != nil do
-      values = Map.get(state, :values, %{})
+    case Utils.match_index(field.values, text, extractor) do
+      nil ->
+        {:same, state}
 
-      value = %{
-        code: field.code,
-        cursor: index
-      }
+      cursor ->
+        values = Map.get(state, :values, %{})
 
-      values = Map.put(values, field.code, value)
+        value = %{
+          code: field.code,
+          cursor: cursor
+        }
 
-      {:same, Map.put(state, :values, values)}
-    else
-      {:same, state}
+        values = Map.put(values, field.code, value)
+
+        {:same, Map.put(state, :values, values)}
     end
   end
 
@@ -394,16 +417,22 @@ defmodule ExStorage.TUI.Screens.ModalForm do
       |> Map.get(field.code, %{})
       |> Map.get(:value, [])
 
-    cursor = Enum.find_index(list, fn v -> v == text end) || 0
+    extractor = fn f -> f end
 
-    value = %{
-      code: field.code,
-      cursor: cursor,
-      value: list
-    }
+    case Utils.match_index(list, text, extractor) do
+      nil ->
+        {:same, state}
 
-    values = Map.put(values, field.code, value)
-    {:same, Map.put(state, :values, values)}
+      cursor ->
+        value = %{
+          code: field.code,
+          cursor: cursor,
+          value: list
+        }
+
+        values = Map.put(values, field.code, value)
+        {:same, Map.put(state, :values, values)}
+    end
   end
 
   defp delete_list(state, field, "*") do
@@ -536,6 +565,37 @@ defmodule ExStorage.TUI.Screens.ModalForm do
     |> String.split(" ")
     |> Enum.filter(fn t -> t != "" end)
     |> Enum.map(&String.trim/1)
+  end
+
+  defp manage_text_as_date(state, field, text) do
+    values = Map.get(state, :values, %{})
+
+    values =
+      case text do
+        "" ->
+          Map.delete(values, field.code)
+
+        "now" ->
+          now = DateTime.utc_now()
+
+          value = %{
+            code: field.code,
+            value: DateTime.to_unix(now, :millisecond)
+          }
+
+          Map.put(values, field.code, value)
+
+        other ->
+          value = %{
+            code: field.code,
+            value: ExStorage.Core.DateUtils.to_millis(other)
+          }
+
+          Map.put(values, field.code, value)
+      end
+
+    state = Map.put(state, :select, false)
+    {:same, Map.put(state, :values, values)}
   end
 
   defp manage_text_as_string(state, field, text) do
