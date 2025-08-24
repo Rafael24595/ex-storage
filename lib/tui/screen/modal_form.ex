@@ -32,6 +32,7 @@ defmodule ExStorage.TUI.Screens.ModalForm do
       {"text", "Type the value."},
       "\n",
       "Date input -> yyyy-mm-dd hh:mm:ss",
+      {"now", "Sets the current date in ISO-8601 format."},
       {"text", "Type the date with ISO-8601 format: yyyy-mm-dd or yyyy-mm-dd hh:mm:ss."},
       "\n",
       "List input -> [ ... ]",
