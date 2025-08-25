@@ -1,0 +1,10 @@
+services:
+  surrealdb:
+    image: surrealdb/surrealdb:v2.3.7
+    container_name: surrealdb
+    ports:
+      - "8000:8000"
+    command: start -u root -p root file:///data/catalog.db
+    volumes:
+      - ./data:/data
+    restart: unless-stopped
