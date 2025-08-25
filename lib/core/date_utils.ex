@@ -22,7 +22,6 @@ defmodule ExStorage.Core.DateUtils do
           |> DateTime.to_unix(:millisecond)
 
         true ->
-          Log.debug("mierdapuitax2")
           {:ok, dt, _} = DateTime.from_iso8601(str)
           DateTime.to_unix(dt, :millisecond)
       end

@@ -24,7 +24,8 @@ defmodule ExStorage.TUI.Screens.ModalForm do
     actions = [
       "Form",
       {"↑ / ↓", "Navigate between form fields."},
-      {"text", "Type the name of an field (ignore case) to move the cursor. Use '*' as a wildcard for any characters."},
+      {"text",
+       "Type the name of an field (ignore case) to move the cursor. Use '*' as a wildcard for any characters."},
       {"enter",
        "Fix the cursor to the field to interact with it, or release if already selected."},
       "\n",
@@ -38,7 +39,8 @@ defmodule ExStorage.TUI.Screens.ModalForm do
       "List input -> [ ... ]",
       {"← / →", "Move between list items."},
       {"text", "Type the values separated by space."},
-      {"\\f", "Type the name of an item (ignore case) to move the cursor. Use '*' as a wildcard for any characters."},
+      {"\\f",
+       "Type the name of an item (ignore case) to move the cursor. Use '*' as a wildcard for any characters."},
       {"\\d", "If '*' added, clear the list; otherwise delete focused item."},
       {"\\h", "Append items to head."},
       {"\\t", "Append items to tail."},
@@ -47,7 +49,15 @@ defmodule ExStorage.TUI.Screens.ModalForm do
       "\n",
       "Enum input -> | ... |",
       {"← / →", "Move between enum items."},
-      {"text", "Type the name of an item (ignore case) to move the cursor. Use '*' as a wildcard for any characters."}
+      {"text",
+       "Type the name of an item (ignore case) to move the cursor. Use '*' as a wildcard for any characters."},
+      "Tally input -> ( ... )",
+      {"← / →", "Move between tally items."},
+      {"\\f",
+       "Type the name of an item (ignore case) to move the cursor. Use '*' as a wildcard for any characters."},
+      {"\\s", "Select the focused item (it will appear with dashes, e.g. -item-)."},
+      {"\\d", "If '*' added, clear the selection; otherwise delete focused item."},
+      "\n",
     ]
 
     commands = [
@@ -147,6 +157,9 @@ defmodule ExStorage.TUI.Screens.ModalForm do
         "list" ->
           format_list_value(f, value)
 
+        "tally" ->
+          format_tally_value(f, value)
+
         "date" ->
           format_date_value(f, value)
 
@@ -158,7 +171,7 @@ defmodule ExStorage.TUI.Screens.ModalForm do
 
   def format_enum_value(field, value) do
     values = list_or_default(field, value)
-    position = list_value_index(field, values, value)
+    position = list_index_or_default(field, values, value)
 
     ExStorage.TUI.Screens.Formatter.list_preview(values, position, %{
       radius: 2,
@@ -169,12 +182,26 @@ defmodule ExStorage.TUI.Screens.ModalForm do
 
   def format_list_value(field, value) do
     values = list_or_default(field, value)
-    position = list_value_index(field, values, value)
+    position = list_index_or_default(field, values, value)
 
     ExStorage.TUI.Screens.Formatter.list_preview(values, position, %{
       radius: 2,
       start_char: "[",
       close_char: "]"
+    })
+  end
+
+  def format_tally_value(field, value) do
+    values = list_or_default(field, value)
+    position = tally_index_or_default(value)
+    points = Map.get(value || %{}, :value, [])
+
+    ExStorage.TUI.Screens.Formatter.list_preview(values, position, %{
+      radius: 2,
+      start_char: "(",
+      close_char: ")",
+      point_char: "-",
+      points: points
     })
   end
 
@@ -298,6 +325,9 @@ defmodule ExStorage.TUI.Screens.ModalForm do
       "list" ->
         manage_text_as_list_action(state, field, text)
 
+      "tally" ->
+        manage_text_as_tally_action(state, field, text)
+
       "date" ->
         manage_text_as_date(state, field, text)
 
@@ -316,7 +346,7 @@ defmodule ExStorage.TUI.Screens.ModalForm do
     field = Enum.at(fields, cursor)
 
     case field_type(field) do
-      type when type not in ["enum", "list"] ->
+      type when type not in ["enum", "list", "tally"] ->
         {:same, state}
 
       _ ->
@@ -324,7 +354,7 @@ defmodule ExStorage.TUI.Screens.ModalForm do
         value = Map.get(values, field.code, %{})
 
         list = list_or_default(field, value)
-        position = list_value_index(field, list, value)
+        position = list_index_or_default(field, list, value)
 
         new_cursor = mod_func.(position, list)
 
@@ -360,6 +390,10 @@ defmodule ExStorage.TUI.Screens.ModalForm do
   end
 
   def manage_text_as_enum_item(state, field, text) do
+    find_enum(state, field, text)
+  end
+
+  def find_enum(state, field, text) do
     extractor = fn f -> f end
 
     case Utils.match_index(field.values, text, extractor) do
@@ -369,10 +403,11 @@ defmodule ExStorage.TUI.Screens.ModalForm do
       cursor ->
         values = Map.get(state, :values, %{})
 
-        value = %{
-          code: field.code,
-          cursor: cursor
-        }
+        value =
+          values
+          |> Map.get(field.code, %{})
+          |> Map.put(:code, field.code)
+          |> Map.put(:cursor, cursor)
 
         values = Map.put(values, field.code, value)
 
@@ -467,7 +502,7 @@ defmodule ExStorage.TUI.Screens.ModalForm do
 
   defp update_list_and_index(value, field, "") do
     list = Map.get(value, :value, [])
-    index = list_value_index(field, list, value)
+    index = list_index_or_default(field, list, value)
     {List.delete_at(list, index), index}
   end
 
@@ -540,7 +575,7 @@ defmodule ExStorage.TUI.Screens.ModalForm do
       |> Map.get(field.code, %{})
 
     list = list_or_default(field, value)
-    cursor = list_value_index(field, list, value)
+    cursor = list_index_or_default(field, list, value)
 
     list = ListUtils.concat_at(list, text_to_list(text), cursor)
 
@@ -554,7 +589,7 @@ defmodule ExStorage.TUI.Screens.ModalForm do
       |> Map.get(field.code, %{})
 
     list = list_or_default(field, value)
-    cursor = list_value_index(field, list, value)
+    cursor = list_index_or_default(field, list, value)
 
     list = ListUtils.replace_at(list, text_to_list(text), cursor)
 
@@ -566,6 +601,80 @@ defmodule ExStorage.TUI.Screens.ModalForm do
     |> String.split(" ")
     |> Enum.filter(fn t -> t != "" end)
     |> Enum.map(&String.trim/1)
+  end
+
+  def manage_text_as_tally_action(state, field, text) do
+    values = Map.get(state, :values, %{})
+    Log.debug(Map.get(values, field.code, %{}))
+    case Utils.parse_command(text) do
+      {:cmd, "f", rest} ->
+        find_enum(state, field, rest)
+
+      {:cmd, "s", _rest} ->
+        select_tally(state, field)
+
+      {:cmd, "d", rest} ->
+        delete_tally(state, field, rest)
+
+      {:cmd, _, _rest} ->
+        {:same, state}
+
+      {:text, text} ->
+        find_enum(state, field, text)
+    end
+  end
+
+  defp select_tally(state, field) do
+    values = Map.get(state, :values, %{})
+
+    value = Map.get(values, field.code, %{})
+    list = Map.get(value, :value, [])
+
+    cursor = list_index_or_default(field, list, value)
+
+    case Enum.find_index(list, fn v -> v == cursor end) do
+      nil ->
+        new_list = Enum.concat(list, [cursor])
+        value = Map.put(value, :value, new_list)
+        values = Map.put(values, field.code, value)
+
+        {:same, state |> Map.put(:values, values)}
+
+      _ ->
+        {:same, state}
+    end
+  end
+
+  defp delete_tally(state, field, "*") do
+    values = Map.get(state, :values, %{})
+    values = Map.delete(values, field.code)
+    {:same, state |> Map.put(:values, values) |> Map.put(:select, false)}
+  end
+
+  defp delete_tally(state, field, _text) do
+    values = Map.get(state, :values, %{})
+
+    case Map.get(values, field.code) do
+      nil ->
+        {:same, Map.put(state, :values, values)}
+
+      value ->
+        list = Map.get(value, :value, [])
+        cursor = list_index_or_default(field, list, value)
+
+        list =
+          case Enum.find_index(list, fn v -> v == cursor end) do
+            nil ->
+              list
+
+            index ->
+              List.delete_at(list, index)
+          end
+
+        value = Map.put(value, :value, list)
+        values = Map.put(values, field.code, value)
+        {:same, Map.put(state, :values, values)}
+    end
   end
 
   defp manage_text_as_date(state, field, text) do
@@ -618,13 +727,25 @@ defmodule ExStorage.TUI.Screens.ModalForm do
     {:same, Map.put(state, :values, values)}
   end
 
-  def list_value_index(field, values, value) do
+  defp list_index_or_default(field, values, value) do
     cursor = Map.get(value || %{}, :cursor)
 
     case cursor do
       nil ->
         search_default_index(field, values)
 
+      cursor when is_number(cursor) ->
+        cursor
+
+      _ ->
+        0
+    end
+  end
+
+  def tally_index_or_default(value) do
+    cursor = Map.get(value || %{}, :cursor)
+
+    case cursor do
       cursor when is_number(cursor) ->
         cursor
 
@@ -643,6 +764,10 @@ defmodule ExStorage.TUI.Screens.ModalForm do
   end
 
   def list_or_default(%{type: "enum"} = field, _value) do
+    Map.get(field, :values, [])
+  end
+
+  def list_or_default(%{type: "tally"} = field, _value) do
     Map.get(field, :values, [])
   end
 

@@ -66,9 +66,46 @@ defmodule ExStorage.TUI.Screens.Formatter do
   end
 
   def list_preview(list, cursor, opts) do
-    radius = Map.get(opts, :radius, 2)
     start_char = Map.get(opts, :start_char, "|")
     close_char = Map.get(opts, :close_char, "|")
+    point_char = Map.get(opts, :point_char, "^")
+    points = Map.get(opts, :points, [])
+
+    len = length(list)
+
+    {from, to} = calculate_area(list, cursor, opts)
+
+    if to < 0 do
+      "#0 #{start_char} ... #{close_char}"
+    else
+      slice = Enum.slice(list, from..to)
+
+      max_len =
+        list
+        |> Enum.map(&String.length/1)
+        |> Enum.max()
+
+      preview =
+        slice
+        |> Enum.with_index(from)
+        |> Enum.map(fn {item, idx} ->
+          point = if idx in points, do: "#{point_char}", else: " "
+          item = "#{point}#{item}#{point}"
+          item = " #{center_text(item, max_len)} "
+          Log.debug(item)
+          if idx == cursor, do: " {#{item}} ", else: item
+        end)
+        |> Enum.join("|")
+
+      left = if from > 0, do: "<", else: start_char
+      right = if to < len - 1, do: ">", else: close_char
+
+      "##{length(list)} #{left}#{preview}#{right}"
+    end
+  end
+
+  defp calculate_area(list, cursor, opts) do
+    radius = Map.get(opts, :radius, 2)
 
     len = length(list)
     last = len - 1
@@ -86,37 +123,11 @@ defmodule ExStorage.TUI.Screens.Formatter do
         {init_from, init_to}
       end
 
-    {from, to} =
-      if to > last do
-        shift = to - last
-        {max(0, from - shift), last}
-      else
-        {from, to}
-      end
-
-    if to < 0 do
-      "#0 #{start_char} ... #{close_char}"
+    if to > last do
+      shift = to - last
+      {max(0, from - shift), last}
     else
-      slice = Enum.slice(list, from..to)
-
-      max_len =
-        list
-        |> Enum.map(&String.length/1)
-        |> Enum.max()
-
-      preview =
-        slice
-        |> Enum.with_index(from)
-        |> Enum.map(fn {item, idx} ->
-          item = " #{center_text(item, max_len)} "
-          if idx == cursor, do: " {#{item}} ", else: item
-        end)
-        |> Enum.join("|")
-
-      left = if from > 0, do: "<", else: start_char
-      right = if to < len - 1, do: ">", else: close_char
-
-      "##{length(list)} #{left}#{preview}#{right}"
+      {from, to}
     end
   end
 end

@@ -70,6 +70,12 @@ defmodule ExStorage.Domain.Work do
         title: "Type",
         type: "enum",
         values: @types
+      },
+      %{
+        code: "concept",
+        title: "Concepts",
+        type: "tally",
+        values: ["condept_001", "condept_002", "condept_003", "condept_004"]
       }
     ]
   end

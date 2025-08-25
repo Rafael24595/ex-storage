@@ -36,7 +36,6 @@ defmodule ExStorage.Core.Utils do
             |> Regex.escape()
             |> String.replace("\\*", ".*")
 
-          Log.debug(rest)
           regex = Regex.compile!("^#{rest}$")
 
           Enum.find_index(list, fn i ->
