@@ -56,6 +56,16 @@ defmodule ExStorage.Core.Utils do
     end
   end
 
+  def clean_pointers(list, items) do
+    len = length(items) - 1
+
+    list
+      |> Enum.filter(fn c ->
+        c >= 0 && c <= len
+      end)
+      |> Enum.uniq()
+  end
+
   def parse_command(text) do
     {first, rest} = String.next_grapheme(text)
     rest = String.trim(rest)

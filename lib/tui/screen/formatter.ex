@@ -1,4 +1,6 @@
 defmodule ExStorage.TUI.Screens.Formatter do
+  alias ExStorage.Core.Utils
+
   def format_table(columns) do
     fixed_columns =
       Enum.map(columns, fn {h, v} ->
@@ -69,7 +71,10 @@ defmodule ExStorage.TUI.Screens.Formatter do
     start_char = Map.get(opts, :start_char, "|")
     close_char = Map.get(opts, :close_char, "|")
     point_char = Map.get(opts, :point_char, "^")
-    points = Map.get(opts, :points, [])
+    points =
+      opts
+      |> Map.get(:points, [])
+      |> Utils.clean_pointers(list)
 
     has_points = Map.get(opts, :points) != nil
 
@@ -95,16 +100,20 @@ defmodule ExStorage.TUI.Screens.Formatter do
         |> Enum.with_index(from)
         |> Enum.map(fn {item, idx} ->
           item = " #{center_text(item, max_len)} "
-            cond do
-              idx == cursor && idx in points ->
-                " /#{item}/ "
-              idx in points ->
-                " #{point_char}#{item}#{point_char} "
-              idx == cursor ->
-                " {#{item}} "
-              true ->
-                "  #{item}  "
-            end
+
+          cond do
+            idx == cursor && idx in points ->
+              " /#{item}/ "
+
+            idx in points ->
+              " #{point_char}#{item}#{point_char} "
+
+            idx == cursor ->
+              " {#{item}} "
+
+            true ->
+              "  #{item}  "
+          end
         end)
         |> Enum.join("|")
 
