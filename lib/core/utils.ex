@@ -11,7 +11,7 @@ defmodule ExStorage.Core.Utils do
   end
 
   def increase_cursor(cursor, options) do
-    cursor = cursor || 0
+    cursor = cursor || -1
     options = options || []
 
     if cursor + 1 > length(options) - 1 do

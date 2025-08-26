@@ -71,12 +71,17 @@ defmodule ExStorage.TUI.Screens.Formatter do
     point_char = Map.get(opts, :point_char, "^")
     points = Map.get(opts, :points, [])
 
+    has_points = Map.get(opts, :points) != nil
+
     len = length(list)
 
     {from, to} = calculate_area(list, cursor, opts)
 
+    selected = if has_points, do: "#{length(points)}/", else: ""
+    total = if !has_points, do: "#{length(list)}  ", else: "#{length(list)}"
+
     if to < 0 do
-      "#0 #{start_char} ... #{close_char}"
+      "##{selected}#{total} #{start_char} ... #{close_char}"
     else
       slice = Enum.slice(list, from..to)
 
@@ -89,18 +94,24 @@ defmodule ExStorage.TUI.Screens.Formatter do
         slice
         |> Enum.with_index(from)
         |> Enum.map(fn {item, idx} ->
-          point = if idx in points, do: "#{point_char}", else: " "
-          item = "#{point}#{item}#{point}"
           item = " #{center_text(item, max_len)} "
-          Log.debug(item)
-          if idx == cursor, do: " {#{item}} ", else: item
+            cond do
+              idx == cursor && idx in points ->
+                " /#{item}/ "
+              idx in points ->
+                " #{point_char}#{item}#{point_char} "
+              idx == cursor ->
+                " {#{item}} "
+              true ->
+                "  #{item}  "
+            end
         end)
         |> Enum.join("|")
 
       left = if from > 0, do: "<", else: start_char
       right = if to < len - 1, do: ">", else: close_char
 
-      "##{length(list)} #{left}#{preview}#{right}"
+      "##{selected}#{total} #{left}#{preview}#{right}"
     end
   end
 
@@ -111,6 +122,8 @@ defmodule ExStorage.TUI.Screens.Formatter do
     last = len - 1
 
     mid = trunc(radius / 2)
+
+    cursor = cursor || 0
 
     init_from = cursor - mid
     init_to = cursor + mid

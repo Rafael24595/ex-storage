@@ -57,7 +57,7 @@ defmodule ExStorage.TUI.Screens.ModalForm do
        "Type the name of an item (ignore case) to move the cursor. Use '*' as a wildcard for any characters."},
       {"\\s", "Select the focused item (it will appear with dashes, e.g. -item-)."},
       {"\\d", "If '*' added, clear the selection; otherwise delete focused item."},
-      "\n",
+      "\n"
     ]
 
     commands = [
@@ -193,7 +193,7 @@ defmodule ExStorage.TUI.Screens.ModalForm do
 
   def format_tally_value(field, value) do
     values = list_or_default(field, value)
-    position = tally_index_or_default(value)
+    position = tally_index_or_default(field, value)
     points = Map.get(value || %{}, :value, [])
 
     ExStorage.TUI.Screens.Formatter.list_preview(values, position, %{
@@ -390,7 +390,19 @@ defmodule ExStorage.TUI.Screens.ModalForm do
   end
 
   def manage_text_as_enum_item(state, field, text) do
-    find_enum(state, field, text)
+    case Utils.parse_command(text) do
+      {:cmd, "f", rest} ->
+        find_enum(state, field, rest)
+
+      {:cmd, "d", _rest} ->
+        delete_enum(state, field)
+
+      {:cmd, _, _rest} ->
+        {:same, state}
+
+      {:text, text} ->
+        find_enum(state, field, text)
+    end
   end
 
   def find_enum(state, field, text) do
@@ -413,6 +425,12 @@ defmodule ExStorage.TUI.Screens.ModalForm do
 
         {:same, Map.put(state, :values, values)}
     end
+  end
+
+  defp delete_enum(state, field) do
+    values = Map.get(state, :values, %{})
+    values = Map.delete(values, field.code)
+    {:same, state |> Map.put(:values, values) |> Map.put(:select, false)}
   end
 
   def manage_text_as_list_action(state, field, text) do
@@ -604,8 +622,6 @@ defmodule ExStorage.TUI.Screens.ModalForm do
   end
 
   def manage_text_as_tally_action(state, field, text) do
-    values = Map.get(state, :values, %{})
-    Log.debug(Map.get(values, field.code, %{}))
     case Utils.parse_command(text) do
       {:cmd, "f", rest} ->
         find_enum(state, field, rest)
@@ -630,12 +646,17 @@ defmodule ExStorage.TUI.Screens.ModalForm do
     value = Map.get(values, field.code, %{})
     list = Map.get(value, :value, [])
 
-    cursor = list_index_or_default(field, list, value)
+    cursor = list_index_or_default(field, list, value) || 0
 
     case Enum.find_index(list, fn v -> v == cursor end) do
       nil ->
         new_list = Enum.concat(list, [cursor])
-        value = Map.put(value, :value, new_list)
+
+        value =
+          value
+          |> Map.put(:value, new_list)
+          |> Map.put(:cursor, cursor)
+
         values = Map.put(values, field.code, value)
 
         {:same, state |> Map.put(:values, values)}
@@ -646,9 +667,7 @@ defmodule ExStorage.TUI.Screens.ModalForm do
   end
 
   defp delete_tally(state, field, "*") do
-    values = Map.get(state, :values, %{})
-    values = Map.delete(values, field.code)
-    {:same, state |> Map.put(:values, values) |> Map.put(:select, false)}
+    delete_enum(state, field)
   end
 
   defp delete_tally(state, field, _text) do
@@ -729,49 +748,50 @@ defmodule ExStorage.TUI.Screens.ModalForm do
 
   defp list_index_or_default(field, values, value) do
     cursor = Map.get(value || %{}, :cursor)
+    required = Map.get(field, :required, false)
 
-    case cursor do
-      nil ->
-        search_default_index(field, values)
+    cond do
+      cursor == nil && required ->
+        content = Map.get(field, :default) || List.first(values, "")
+        Enum.find_index(values, fn v -> v == content end) || 0
 
-      cursor when is_number(cursor) ->
+      is_number(cursor) ->
         cursor
 
-      _ ->
-        0
+      true ->
+        nil
     end
   end
 
-  def tally_index_or_default(value) do
+  def tally_index_or_default(field, value) do
     cursor = Map.get(value || %{}, :cursor)
+    required = Map.get(field, :required, false)
 
-    case cursor do
-      cursor when is_number(cursor) ->
+    cond do
+      cursor == nil && required ->
+        0
+
+      is_number(cursor) ->
         cursor
 
-      _ ->
-        0
+      true ->
+        nil
     end
   end
 
-  def search_default_index(field, values) do
-    content = Map.get(field, :default) || List.first(values, "")
-    Enum.find_index(values, fn v -> v == content end) || 0
-  end
-
-  def list_or_default(%{type: "list"} = field, value) do
+  defp list_or_default(%{type: "list"} = field, value) do
     Map.get(value || %{}, :value) || Map.get(field, :values, [])
   end
 
-  def list_or_default(%{type: "enum"} = field, _value) do
+  defp list_or_default(%{type: "enum"} = field, _value) do
     Map.get(field, :values, [])
   end
 
-  def list_or_default(%{type: "tally"} = field, _value) do
+  defp list_or_default(%{type: "tally"} = field, _value) do
     Map.get(field, :values, [])
   end
 
-  def field_type(field) do
+  defp field_type(field) do
     Map.get(field || %{}, :type, "string")
   end
 end

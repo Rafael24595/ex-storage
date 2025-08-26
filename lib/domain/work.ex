@@ -69,7 +69,8 @@ defmodule ExStorage.Domain.Work do
         code: "type",
         title: "Type",
         type: "enum",
-        values: @types
+        values: @types,
+        required: true,
       },
       %{
         code: "concept",
