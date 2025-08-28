@@ -66,7 +66,14 @@ defmodule ExStorage.Core.Utils do
       |> Enum.uniq()
   end
 
-  def parse_command(text) do
+  def parse_basic_command(text) do
+     case String.split(text, " ", parts: 2) do
+      [cmd, arg] -> {:cmd, cmd, arg}
+      [text]     -> {:text, text}
+    end
+  end
+
+  def parse_slash_command(text) do
     {first, rest} = String.next_grapheme(text)
     rest = String.trim(rest)
 

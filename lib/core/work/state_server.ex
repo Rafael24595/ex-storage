@@ -1,6 +1,8 @@
 defmodule ExStorage.Core.Work.StateServer do
   use GenServer
 
+  @default_limit 10
+
   def start_link(repository \\ nil) do
     repository = if repository == [], do: nil, else: repository
     GenServer.start_link(__MODULE__, repository, name: __MODULE__)
@@ -12,11 +14,14 @@ defmodule ExStorage.Core.Work.StateServer do
     {:ok, %ExStorage.Core.Work.State{repository: repository}}
   end
 
+  def default_limit, do: @default_limit
+
   def state(), do: GenServer.call(__MODULE__, :state)
 
   def delete(id \\ nil), do: GenServer.call(__MODULE__, {:delete, id})
 
   def load_page(), do: GenServer.call(__MODULE__, :load_page)
+  def load_page(limit), do: GenServer.call(__MODULE__, {:load_page, limit})
   def prev_page(limit \\ nil), do: GenServer.call(__MODULE__, {:prev_page, limit})
   def next_page(limit \\ nil), do: GenServer.call(__MODULE__, {:next_page, limit})
 
@@ -30,14 +35,7 @@ defmodule ExStorage.Core.Work.StateServer do
   def handle_call({:delete, id}, _from, state) do
     case state.repository.delete(id) do
       {:ok, _} ->
-        case refresh(state) do
-          {:ok, new_state} ->
-            {:reply, {:ok, new_state}, new_state}
-
-          {:error, cause} ->
-            Log.error(cause)
-            {:reply, {:ok, state}, state}
-        end
+        fetch(state)
 
       {:error, cause} ->
         Log.error("An error occurred during work deleting: #{inspect(cause)}")
@@ -47,48 +45,25 @@ defmodule ExStorage.Core.Work.StateServer do
   end
 
   def handle_call(:load_page, _from, state) do
-    case refresh(state) do
-      {:ok, new_state} ->
-        {:reply, {:ok, new_state}, new_state}
+    fetch(state)
+  end
 
-      {:error, cause} ->
-        Log.error(cause)
-        {:reply, {:ok, state}, state}
-    end
+  def handle_call({:load_page, limit}, _from, state) do
+    fetch(state, limit, state.offset)
   end
 
   def handle_call({:prev_page, limit}, _from, state) do
     limit = limit || state.limit || 10
     offset = max(state.offset - limit, 0)
 
-    case fetch(state, limit, offset) do
-      {:ok, new_state} ->
-        {:reply, {:ok, new_state}, new_state}
-
-      {:error, cause} ->
-        Log.error(
-          "An error occurred during work state server previous page fetching: #{inspect(cause)}"
-        )
-
-        {:reply, {:ok, state}, state}
-    end
+    fetch(state, limit, offset)
   end
 
   def handle_call({:next_page, limit}, _from, state) do
     limit = limit || state.limit || 10
     offset = state.offset + limit
 
-    case fetch(state, limit, offset) do
-      {:ok, new_state} ->
-        {:reply, {:ok, new_state}, new_state}
-
-      {:error, cause} ->
-        Log.error(
-          "An error occurred during work state server next page fetching: #{inspect(cause)}"
-        )
-
-        {:reply, {:ok, state}, state}
-    end
+    fetch(state, limit, offset)
   end
 
   @impl true
@@ -112,16 +87,9 @@ defmodule ExStorage.Core.Work.StateServer do
     {:noreply, new_state}
   end
 
-  defp refresh(state) do
+  defp fetch(state) do
     limit = max(state.limit, 10)
-
-    case fetch(state, limit, state.offset) do
-      {:ok, new_state} ->
-        {:ok, new_state}
-
-      {:error, cause} ->
-        {:error, "An error occurred during work state server refreshing: #{inspect(cause)}"}
-    end
+    fetch(state, limit, state.offset)
   end
 
   defp fetch(state, limit, offset) do
@@ -131,10 +99,11 @@ defmodule ExStorage.Core.Work.StateServer do
 
       cond do
         offset == state.offset and count == state.count and limit == state.limit ->
-          {:ok, state}
+          {:reply, {:ok, state}, state}
 
         offset == count ->
-          {:ok, %{state | limit: limit}}
+          new_state = Map.put(state, :limit, limit)
+          {:reply, {:ok, new_state}, new_state}
 
         true ->
           last = min(offset + limit, count)
@@ -149,14 +118,15 @@ defmodule ExStorage.Core.Work.StateServer do
               last: last
           }
 
-          {:ok, new_state}
+          {:reply, {:ok, new_state}, new_state}
       end
     else
       {:ok, []} ->
-        {:ok, state}
+        {:reply, {:ok, state}, state}
 
       {:error, reason} ->
-        {:error, reason}
+        Log.error("An error occurred during work state server fetching", reason)
+        {:reply, {:ok, state}, state}
     end
   end
 end

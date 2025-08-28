@@ -1,6 +1,9 @@
 defmodule ExStorage.TUI.Screens.WorkTable do
   @behaviour ExStorage.TUI.Screen
 
+  alias ExStorage.Core.Utils
+  alias ExStorage.Core.Work.StateServer
+
   def new_state() do
     %{
       show_help: false
@@ -22,6 +25,8 @@ defmodule ExStorage.TUI.Screens.WorkTable do
       {"r", "Refresh the current page."},
       {"v", "Open a modal with the details of the selected work."},
       {"c", "Open a form modal to create a new work."},
+      {"l",
+       "Set the number of items per page. If no value is given, the limit resets to the default."},
       {"d", "Delete the selected work."},
       {"q", "Exit the application."}
     ]
@@ -59,6 +64,7 @@ defmodule ExStorage.TUI.Screens.WorkTable do
       {"r", "refresh"},
       {"v", "view"},
       {"c", "create"},
+      {"l", "limit"},
       {"d", "delete"},
       {"q", "quit"}
     ]
@@ -78,7 +84,7 @@ defmodule ExStorage.TUI.Screens.WorkTable do
     max_len =
       rows
       |> Enum.map(&String.length/1)
-      |> Enum.max()
+      |> Enum.max(fn -> 0 end)
 
     max_len = max(max_len, header_len)
 
@@ -174,16 +180,31 @@ defmodule ExStorage.TUI.Screens.WorkTable do
 
   def handle_event(state, {:char, "q"}), do: {:quit, state}
 
-  def handle_event(%{show_help: false} = state, {:char, digits}) do
-    if String.match?(digits, ~r/^\d+$/) do
-      new_cursor = String.to_integer(digits)
-      ExStorage.Core.Work.StateServer.set_cursor(new_cursor)
-    end
+  def handle_event(%{show_help: false} = state, {:char, text}) do
+    cond do
+      String.match?(text, ~r/^\d+$/) ->
+        new_cursor = String.to_integer(text)
+        ExStorage.Core.Work.StateServer.set_cursor(new_cursor)
 
-    {:same, state}
+      true ->
+        manage_text_as_basic_command(state, text)
+    end
   end
 
   def handle_event(state, _) do
+    {:same, state}
+  end
+
+  defp manage_text_as_basic_command(state, text) do
+    case Utils.parse_basic_command(text) do
+      {:cmd, "l", rest} ->
+        {_, limit} = NumberUtils.integer_parse(rest, StateServer.default_limit())
+        StateServer.load_page(limit)
+
+      {:text, "l"} ->
+        StateServer.load_page(StateServer.default_limit())
+    end
+
     {:same, state}
   end
 

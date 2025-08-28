@@ -396,7 +396,7 @@ defmodule ExStorage.TUI.Screens.ModalForm do
   end
 
   defp manage_text_as_enum_item(state, field, text) do
-    case Utils.parse_command(text) do
+    case Utils.parse_slash_command(text) do
       {:cmd, "f", rest} ->
         find_enum(state, field, rest)
 
@@ -440,7 +440,7 @@ defmodule ExStorage.TUI.Screens.ModalForm do
   end
 
   defp manage_text_as_list_action(state, field, text) do
-    case Utils.parse_command(text) do
+    case Utils.parse_slash_command(text) do
       {:cmd, "f", rest} ->
         find_list(state, field, rest)
 
@@ -628,7 +628,7 @@ defmodule ExStorage.TUI.Screens.ModalForm do
   end
 
   defp manage_text_as_tally_action(state, field, text) do
-    case Utils.parse_command(text) do
+    case Utils.parse_slash_command(text) do
       {:cmd, "f", rest} ->
         find_enum(state, field, rest)
 
