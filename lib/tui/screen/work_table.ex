@@ -24,9 +24,11 @@ defmodule ExStorage.TUI.Screens.WorkTable do
       {"number", "Type an index to move the cursor to that work."},
       {"r", "Refresh the current page."},
       {"v", "Open a modal with the details of the selected work."},
-      {"c", "Open a form modal to create a new work."},
-      {"l",
+      {"l number",
        "Set the number of items per page. If no value is given, the limit resets to the default."},
+       {"p number",
+       "Loads the specific page (starting from 0). If no value is given, the page resets to page 0."},
+      {"c", "Open a form modal to create a new work."},
       {"d", "Delete the selected work."},
       {"q", "Exit the application."}
     ]
@@ -63,8 +65,10 @@ defmodule ExStorage.TUI.Screens.WorkTable do
       {"h", "help"},
       {"r", "refresh"},
       {"v", "view"},
-      {"c", "create"},
       {"l", "limit"},
+      {"p", "page"},
+      "\n",
+      {"c", "create"},
       {"d", "delete"},
       {"q", "quit"}
     ]
@@ -141,6 +145,10 @@ defmodule ExStorage.TUI.Screens.WorkTable do
     {:same, state}
   end
 
+  def handle_event(%{show_help: false} = _state, {:char, "v"}) do
+    {ExStorage.TUI.Screens.WorkView, ExStorage.TUI.Screens.WorkView.new_state()}
+  end
+
   def handle_event(%{show_help: true} = state, {:char, "c"}) do
     state = Map.put(state, :show_help, false)
     {:same, state}
@@ -157,10 +165,6 @@ defmodule ExStorage.TUI.Screens.WorkTable do
          {"q", "quit", fn state -> quit(state) end}
        ]
      )}
-  end
-
-  def handle_event(%{show_help: false} = _state, {:char, "v"}) do
-    {ExStorage.TUI.Screens.WorkView, ExStorage.TUI.Screens.WorkView.new_state()}
   end
 
   def handle_event(%{show_help: false} = _state, {:char, "d"}) do
@@ -201,8 +205,15 @@ defmodule ExStorage.TUI.Screens.WorkTable do
         {_, limit} = NumberUtils.integer_parse(rest, StateServer.default_limit())
         StateServer.load_page(limit)
 
+      {:cmd, "p", rest} ->
+        {_, page} = NumberUtils.integer_parse(rest, 0)
+        StateServer.goto_page(page)
+
       {:text, "l"} ->
         StateServer.load_page(StateServer.default_limit())
+
+      {:text, "p"} ->
+        StateServer.goto_page(0)
     end
 
     {:same, state}

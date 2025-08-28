@@ -19,4 +19,10 @@ defmodule ListUtils do
     list2 = Enum.concat(list2, tail(right))
     Enum.concat(left, list2)
   end
+
+  def chunk_by(list, separator) do
+    list
+    |> Enum.chunk_by(& &1 == separator)
+    |> Enum.reject(fn chunk -> chunk == [separator] end)
+  end
 end

@@ -50,16 +50,30 @@ defmodule ExStorage.TUI.Screens.Modules do
   def commands(commands) do
     header = "[ Commands ] "
 
-    commands =
-      Enum.map_join(commands, " ", fn
-        {k, d, _f} -> "#{d}(#{k})"
-        {k, d} -> "#{d}(#{k})"
-        k -> "#{k} "
+    rows =
+      commands
+      |> ListUtils.chunk_by("\n")
+      |> Enum.map(fn r ->
+        Enum.map_join(r, " ", fn
+          {k, d, _f} -> "#{d}(#{k})"
+          {k, d} -> "#{d}(#{k})"
+          k -> "#{k} "
+        end)
       end)
 
-    header = String.pad_trailing(header, String.length(commands), "=")
+    max_len =
+      rows
+      |> Enum.map(&String.length/1)
+      |> Enum.max(fn -> 0 end)
+
+    header = String.pad_trailing(header, max_len, "=")
 
     IO.puts("\n#{header}")
-    IO.puts("#{commands}\n")
+
+    Enum.each(rows, fn r ->
+      IO.puts(r)
+    end)
+
+    IO.puts("\n")
   end
 end

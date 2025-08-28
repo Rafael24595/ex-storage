@@ -22,6 +22,7 @@ defmodule ExStorage.Core.Work.StateServer do
 
   def load_page(), do: GenServer.call(__MODULE__, :load_page)
   def load_page(limit), do: GenServer.call(__MODULE__, {:load_page, limit})
+  def goto_page(page), do: GenServer.call(__MODULE__, {:goto_page, page})
   def prev_page(limit \\ nil), do: GenServer.call(__MODULE__, {:prev_page, limit})
   def next_page(limit \\ nil), do: GenServer.call(__MODULE__, {:next_page, limit})
 
@@ -52,15 +53,23 @@ defmodule ExStorage.Core.Work.StateServer do
     fetch(state, limit, state.offset)
   end
 
+  def handle_call({:goto_page, page}, _from, state) do
+    limit = state.limit || @default_limit
+    offset = min(limit * page, limit * floor(state.count / limit))
+    offset = max(offset, 0)
+
+    fetch(state, limit, offset)
+  end
+
   def handle_call({:prev_page, limit}, _from, state) do
-    limit = limit || state.limit || 10
+    limit = limit || state.limit || @default_limit
     offset = max(state.offset - limit, 0)
 
     fetch(state, limit, offset)
   end
 
   def handle_call({:next_page, limit}, _from, state) do
-    limit = limit || state.limit || 10
+    limit = limit || state.limit || @default_limit
     offset = state.offset + limit
 
     fetch(state, limit, offset)
@@ -88,7 +97,7 @@ defmodule ExStorage.Core.Work.StateServer do
   end
 
   defp fetch(state) do
-    limit = max(state.limit, 10)
+    limit = max(state.limit, @default_limit)
     fetch(state, limit, state.offset)
   end
 
