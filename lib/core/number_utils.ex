@@ -1,4 +1,4 @@
-defmodule NumberUtils do
+defmodule ExStorage.Core.NumberUtils do
   def integer_parse(str) do
     case Integer.parse(str) do
       {int, ""} -> {:ok, int}

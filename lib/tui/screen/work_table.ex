@@ -2,7 +2,9 @@ defmodule ExStorage.TUI.Screens.WorkTable do
   @behaviour ExStorage.TUI.Screen
 
   alias ExStorage.Core.Utils
+  alias ExStorage.Core.NumberUtils
   alias ExStorage.Core.Work.StateServer
+  alias ExStorage.TUI.Screens.Modules
 
   def new_state() do
     %{
@@ -12,7 +14,7 @@ defmodule ExStorage.TUI.Screens.WorkTable do
 
   @impl true
   def onload(state) do
-    ExStorage.Core.Work.StateServer.load_page()
+    StateServer.load_page()
     render(state)
   end
 
@@ -26,7 +28,7 @@ defmodule ExStorage.TUI.Screens.WorkTable do
       {"v", "Open a modal with the details of the selected work."},
       {"l number",
        "Set the number of items per page. If no value is given, the limit resets to the default."},
-       {"p number",
+      {"p number",
        "Loads the specific page (starting from 0). If no value is given, the page resets to page 0."},
       {"c", "Open a form modal to create a new work."},
       {"d", "Delete the selected work."},
@@ -38,28 +40,26 @@ defmodule ExStorage.TUI.Screens.WorkTable do
       {"q", "quit"}
     ]
 
-    ExStorage.TUI.Screens.Modules.help(actions)
-    ExStorage.TUI.Screens.Modules.commands(commands)
+    Modules.help(actions)
+    Modules.commands(commands)
   end
 
   def render(_state) do
-    work_state = ExStorage.Core.Work.StateServer.state()
+    work_state = StateServer.state()
     works = work_state.works
     cursor = work_state.cursor
-    count = work_state.count
-    from = work_state.offset
-    to = work_state.last
 
-    header = "Media Source (#{count}) [#{from} - #{to}]"
+    header =
+      Modules.header_state(
+        "Media Source",
+        work_state.count,
+        work_state.offset,
+        work_state.last
+      )
 
-    formatter = fn {w, i} ->
-      title = w.title || "(untitled)"
-      type = w.type || "-"
-      marker = if i == cursor, do: "›", else: " "
-      "#{marker} #{i}.- [#{type}] #{title}"
-    end
+    formatter = work_formatter(cursor)
 
-    print_sources_list(header, works, formatter)
+    Modules.items_list(header, works, formatter)
 
     commands = [
       {"h", "help"},
@@ -73,48 +73,22 @@ defmodule ExStorage.TUI.Screens.WorkTable do
       {"q", "quit"}
     ]
 
-    ExStorage.TUI.Screens.Modules.commands(commands)
-  end
-
-  defp print_sources_list(header, rows, formatter) do
-    header = " #{header} "
-
-    rows =
-      Enum.with_index(rows)
-      |> Enum.map(formatter)
-
-    header_len = String.length(header)
-
-    max_len =
-      rows
-      |> Enum.map(&String.length/1)
-      |> Enum.max(fn -> 0 end)
-
-    max_len = max(max_len, header_len)
-
-    header_limit = String.duplicate("-", header_len)
-    limit = String.duplicate("-", max_len)
-
-    IO.puts(header_limit)
-    IO.puts(header)
-    IO.puts(limit)
-
-    Enum.each(rows, fn r -> IO.puts(r) end)
+    Modules.commands(commands)
   end
 
   @impl true
   def handle_event(%{show_help: false} = state, :up) do
-    ExStorage.Core.Work.StateServer.decrease_cursor()
+    StateServer.decrease_cursor()
     {:same, state}
   end
 
   def handle_event(%{show_help: false} = state, :down) do
-    ExStorage.Core.Work.StateServer.increase_cursor()
+    StateServer.increase_cursor()
     {:same, state}
   end
 
   def handle_event(%{show_help: false} = state, :left) do
-    case ExStorage.Core.Work.StateServer.prev_page() do
+    case StateServer.prev_page() do
       {:same, _} ->
         {:keep, state}
 
@@ -124,7 +98,7 @@ defmodule ExStorage.TUI.Screens.WorkTable do
   end
 
   def handle_event(%{show_help: false} = state, :right) do
-    case ExStorage.Core.Work.StateServer.next_page() do
+    case StateServer.next_page() do
       {:same, _} ->
         {:same, state}
 
@@ -141,7 +115,7 @@ defmodule ExStorage.TUI.Screens.WorkTable do
   end
 
   def handle_event(%{show_help: false} = state, {:char, "r"}) do
-    ExStorage.Core.Work.StateServer.load_page()
+    StateServer.load_page()
     {:same, state}
   end
 
@@ -168,7 +142,7 @@ defmodule ExStorage.TUI.Screens.WorkTable do
   end
 
   def handle_event(%{show_help: false} = _state, {:char, "d"}) do
-    work_state = ExStorage.Core.Work.StateServer.state()
+    work_state = StateServer.state()
     work = Enum.at(work_state.works, work_state.cursor)
 
     {ExStorage.TUI.Screens.ModalConfirm,
@@ -188,7 +162,7 @@ defmodule ExStorage.TUI.Screens.WorkTable do
     cond do
       String.match?(text, ~r/^\d+$/) ->
         new_cursor = String.to_integer(text)
-        ExStorage.Core.Work.StateServer.set_cursor(new_cursor)
+        StateServer.set_cursor(new_cursor)
 
       true ->
         manage_text_as_basic_command(state, text)
@@ -219,8 +193,17 @@ defmodule ExStorage.TUI.Screens.WorkTable do
     {:same, state}
   end
 
+  defp work_formatter(cursor) do
+    fn {work, idx} ->
+      title = work.title || "(untitled)"
+      type = work.type || "-"
+      marker = if idx == cursor, do: "›", else: " "
+      "#{marker} #{idx}.- [#{type}] #{title}"
+    end
+  end
+
   defp delete(state, id) do
-    case ExStorage.Core.Work.StateServer.delete(id) do
+    case StateServer.delete(id) do
       {:same, _} ->
         {:keep, state}
 

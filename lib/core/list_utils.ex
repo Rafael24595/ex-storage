@@ -1,4 +1,4 @@
-defmodule ListUtils do
+defmodule ExStorage.Core.ListUtils do
   def tail([]), do: []
   def tail([_ | tail]), do: tail
 

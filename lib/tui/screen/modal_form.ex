@@ -2,6 +2,10 @@ defmodule ExStorage.TUI.Screens.ModalForm do
   @behaviour ExStorage.TUI.Screen
 
   alias ExStorage.Core.Utils
+  alias ExStorage.Core.ListUtils
+  alias ExStorage.Core.DateUtils
+  alias ExStorage.TUI.Screens.Formatter
+  alias ExStorage.TUI.Screens.Modules
 
   @def_max_text 64
 
@@ -71,8 +75,8 @@ defmodule ExStorage.TUI.Screens.ModalForm do
       {"q", "quit"}
     ]
 
-    ExStorage.TUI.Screens.Modules.help(actions)
-    ExStorage.TUI.Screens.Modules.commands(commands)
+    Modules.help(actions)
+    Modules.commands(commands)
   end
 
   def render(state) do
@@ -94,7 +98,7 @@ defmodule ExStorage.TUI.Screens.ModalForm do
 
     max_len = max(max_len, String.length(title))
 
-    title = ExStorage.TUI.Screens.Formatter.center_text(title, max_len)
+    title = Formatter.center_text(title, max_len)
     title = "| #{title} |"
 
     limit = String.duplicate("-", max_len + 4)
@@ -111,7 +115,7 @@ defmodule ExStorage.TUI.Screens.ModalForm do
 
     options = [{"h", "help"} | Map.get(state, :options, [])]
 
-    ExStorage.TUI.Screens.Modules.commands(options)
+    Modules.commands(options)
   end
 
   defp format_titles(state) do
@@ -179,7 +183,7 @@ defmodule ExStorage.TUI.Screens.ModalForm do
     values = list_or_default(field, value)
     position = list_index_or_default(field, values, value)
 
-    ExStorage.TUI.Screens.Formatter.list_preview(values, position, %{
+    Formatter.list_preview(values, position, %{
       radius: 2,
       start_char: "|",
       close_char: "|"
@@ -190,7 +194,7 @@ defmodule ExStorage.TUI.Screens.ModalForm do
     values = list_or_default(field, value)
     position = list_index_or_default(field, values, value)
 
-    ExStorage.TUI.Screens.Formatter.list_preview(values, position, %{
+    Formatter.list_preview(values, position, %{
       radius: 2,
       start_char: "[",
       close_char: "]"
@@ -202,7 +206,7 @@ defmodule ExStorage.TUI.Screens.ModalForm do
     position = tally_index_or_default(field, value)
     points = Map.get(value || %{}, :value, [])
 
-    ExStorage.TUI.Screens.Formatter.list_preview(values, position, %{
+    Formatter.list_preview(values, position, %{
       radius: 2,
       start_char: "(",
       close_char: ")",
@@ -216,10 +220,10 @@ defmodule ExStorage.TUI.Screens.ModalForm do
 
     case value do
       millis when is_integer(millis) ->
-        ExStorage.Core.DateUtils.from_millis(millis)
+        DateUtils.from_millis(millis)
 
       nil ->
-        ExStorage.Core.DateUtils.date_pattern()
+        DateUtils.date_pattern()
     end
   end
 
@@ -747,7 +751,7 @@ defmodule ExStorage.TUI.Screens.ModalForm do
         other ->
           value = %{
             code: field.code,
-            value: ExStorage.Core.DateUtils.to_millis(other)
+            value: DateUtils.to_millis(other)
           }
 
           Map.put(values, field.code, value)

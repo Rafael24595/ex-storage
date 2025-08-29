@@ -1,6 +1,8 @@
 defmodule ExStorage.Core.Work.StateServer do
   use GenServer
 
+  alias ExStorage.Core.Utils
+
   @default_limit 10
 
   def start_link(repository \\ nil) do
@@ -77,13 +79,13 @@ defmodule ExStorage.Core.Work.StateServer do
 
   @impl true
   def handle_cast(:decrease_cursor, state) do
-    new_cursor = ExStorage.Core.Utils.decrease_cursor(state.cursor, state.works)
+    new_cursor = Utils.decrease_cursor(state.cursor, state.works)
     new_state = %{state | cursor: new_cursor}
     {:noreply, new_state}
   end
 
   def handle_cast(:increase_cursor, state) do
-    new_cursor = ExStorage.Core.Utils.increase_cursor(state.cursor, state.works)
+    new_cursor = Utils.increase_cursor(state.cursor, state.works)
     new_state = %{state | cursor: new_cursor}
     {:noreply, new_state}
   end

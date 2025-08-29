@@ -1,6 +1,9 @@
 defmodule ExStorage.TUI.Screens.WorkView do
   @behaviour ExStorage.TUI.Screen
 
+  alias ExStorage.Core.Work.StateServer
+  alias ExStorage.TUI.Screens.Modules
+
   def new_state() do
     %{
       show_help: false
@@ -26,12 +29,12 @@ defmodule ExStorage.TUI.Screens.WorkView do
       {"q", "quit"}
     ]
 
-    ExStorage.TUI.Screens.Modules.help(actions)
-    ExStorage.TUI.Screens.Modules.commands(commands)
+    Modules.help(actions)
+    Modules.commands(commands)
   end
 
   def render(_state) do
-    work_state = ExStorage.Core.Work.StateServer.state()
+    work_state = StateServer.state()
     work = Enum.at(work_state.works, work_state.cursor)
 
     columns = [
@@ -41,7 +44,8 @@ defmodule ExStorage.TUI.Screens.WorkView do
       {"Creator", [work.creator]}
     ]
 
-    print_source_table(work.id, columns)
+    header = "Source: #{work.id}"
+    Modules.items_table(header, columns)
 
     commands = [
       {"h", "help"},
@@ -50,27 +54,7 @@ defmodule ExStorage.TUI.Screens.WorkView do
       {"q", "quit"}
     ]
 
-    ExStorage.TUI.Screens.Modules.commands(commands)
-  end
-
-  def print_source_table(id, columns) do
-    source = "| Source: #{id} |"
-    source_limit = String.duplicate("-", String.length(source))
-
-    {:headers, headers, :rows, rows} = ExStorage.TUI.Screens.Formatter.format_table(columns)
-
-    limit = String.duplicate("-", String.length(headers))
-    IO.puts(source_limit)
-    IO.puts(source)
-    IO.puts(limit)
-    IO.puts(headers)
-
-    Enum.each(rows, fn r ->
-      IO.puts(limit)
-      IO.puts(r)
-    end)
-
-    IO.puts(limit)
+    Modules.commands(commands)
   end
 
   @impl true
@@ -89,7 +73,7 @@ defmodule ExStorage.TUI.Screens.WorkView do
   end
 
   def handle_event(%{show_help: false} = state, {:char, "r"}) do
-    ExStorage.Core.Work.StateServer.load_page()
+    StateServer.load_page()
     {:same, state}
   end
 

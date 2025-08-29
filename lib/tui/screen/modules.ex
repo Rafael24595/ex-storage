@@ -1,4 +1,6 @@
 defmodule ExStorage.TUI.Screens.Modules do
+  alias ExStorage.Core.ListUtils
+
   def help(actions) do
     max_len =
       actions
@@ -74,6 +76,61 @@ defmodule ExStorage.TUI.Screens.Modules do
       IO.puts(r)
     end)
 
-    IO.puts("\n")
+    IO.puts("")
+  end
+
+  def header_state(title, count, from, to) do
+    %{
+      title: title,
+      count: count,
+      from: from,
+      to: to
+    }
+  end
+
+  def items_list(%{title: title, count: count, from: from, to: to}, rows, formatter) do
+    header = " #{title} (#{count}) [#{from} - #{to}] "
+
+    rows =
+      Enum.with_index(rows)
+      |> Enum.map(formatter)
+
+    header_len = String.length(header)
+
+    max_len =
+      rows
+      |> Enum.map(&String.length/1)
+      |> Enum.max(fn -> 0 end)
+
+    max_len = max(max_len, header_len)
+
+    header_limit = String.duplicate("-", header_len)
+    limit = String.duplicate("-", max_len)
+
+    IO.puts(header_limit)
+    IO.puts(header)
+    IO.puts(limit)
+
+    Enum.each(rows, fn r -> IO.puts(r) end)
+  end
+
+  def items_table(header, columns) do
+    source = "| #{header} |"
+    source_limit = String.duplicate("-", String.length(source))
+
+    {:headers, headers, :rows, rows} = ExStorage.TUI.Screens.Formatter.format_table(columns)
+
+    limit = String.duplicate("-", String.length(headers))
+    IO.puts(source_limit)
+    IO.puts(source)
+    IO.puts(limit)
+    IO.puts(headers)
+
+    Enum.each(rows, fn r ->
+      IO.puts(limit)
+      IO.puts(r)
+    end)
+
+    IO.puts(limit)
   end
 end
