@@ -60,21 +60,38 @@ defmodule ExStorage.Core.Utils do
     len = length(items) - 1
 
     list
-      |> Enum.filter(fn c ->
-        c >= 0 && c <= len
-      end)
-      |> Enum.uniq()
+    |> Enum.filter(fn c ->
+      c >= 0 && c <= len
+    end)
+    |> Enum.uniq()
   end
 
   def parse_basic_command(text) do
-     case String.split(text, " ", parts: 2) do
+    fragments =
+      text
+      |> String.trim()
+      |> String.split(" ", parts: 2)
+
+    case fragments do
       [cmd, arg] -> {:cmd, cmd, arg}
-      [text]     -> {:text, text}
+      [text] -> {:text, text}
     end
   end
 
+  def parse_slash_command("") do
+    {:text, ""}
+  end
+
+  def parse_slash_command("\\") do
+    {:text, ""}
+  end
+
   def parse_slash_command(text) do
-    {first, rest} = String.next_grapheme(text)
+    {first, rest} =
+      text
+      |> String.trim()
+      |> String.next_grapheme()
+
     rest = String.trim(rest)
 
     case first do

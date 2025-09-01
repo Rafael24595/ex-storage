@@ -15,23 +15,23 @@ defmodule ExStorage.Domain.Utils do
     end)
   end
 
-  def definition_to_field(%{code: nil}, _values) do
+  defp definition_to_field(%{code: nil}, _values) do
     {nil, nil}
   end
 
-  def definition_to_field(%{code: key, type: "string"} = _field, values) do
+  defp definition_to_field(%{code: key, type: "string"} = _field, values) do
     definition_value(key, values)
   end
 
-  def definition_to_field(%{code: key, type: "date"} = _field, values) do
+  defp definition_to_field(%{code: key, type: "date"} = _field, values) do
     definition_value(key, values)
   end
 
-  def definition_to_field(%{code: key, type: "list"} = _field, values) do
+  defp definition_to_field(%{code: key, type: "list"} = _field, values) do
     definition_value(key, values)
   end
 
-  def definition_to_field(%{code: key, type: "enum", values: items} = _field, values) do
+  defp definition_to_field(%{code: key, type: "enum", values: items} = _field, values) do
     value = Map.get(values, key, %{})
 
     case Map.get(value, :cursor) do
@@ -50,11 +50,11 @@ defmodule ExStorage.Domain.Utils do
     end
   end
 
-  def definition_to_field(%{code: key, type: "tally", values: items} = _field, values) do
+  defp definition_to_field(%{code: key, type: "tally", values: items} = _field, values) do
     value =
       values
       |> Map.get(key, %{})
-      |> Map.get(:values, [])
+      |> Map.get(:value, [])
       |> Enum.reduce([], fn c, acc ->
         cond do
           c < 0 ->
@@ -72,7 +72,7 @@ defmodule ExStorage.Domain.Utils do
     {key, value}
   end
 
-  def definition_value(key, values) do
+  defp definition_value(key, values) do
     value =
       values
       |> Map.get(key, %{})
