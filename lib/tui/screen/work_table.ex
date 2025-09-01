@@ -134,7 +134,7 @@ defmodule ExStorage.TUI.Screens.WorkTable do
        "Create new Work",
        ExStorage.Domain.Work.definition(),
        [
-         {"s", "save", fn _state -> back() end},
+         {"s", "save", fn state -> save(state) end},
          {"c", "cancel", fn _state -> back() end},
          {"q", "quit", fn state -> quit(state) end}
        ]
@@ -200,6 +200,19 @@ defmodule ExStorage.TUI.Screens.WorkTable do
       marker = if idx == cursor, do: "›", else: " "
       "#{marker} #{idx}.- [#{type}] #{title}"
     end
+  end
+
+  defp save(state) do
+    fields = Map.get(state, :fields, %{})
+    values = Map.get(state, :values, %{})
+
+    map = ExStorage.Domain.Utils.definition_to_map(fields, values)
+    work = ExStorage.Domain.Work.from_map(map)
+
+    #TODO: Insert into data base.
+    Log.debug(work)
+
+    {:same, state}
   end
 
   defp delete(state, id) do

@@ -56,8 +56,8 @@ defmodule ExStorage.Domain.Work do
         type: "string"
       },
       %{
-        code: "release",
-        title: "Release",
+        code: "released",
+        title: "Released",
         type: "date"
       },
       %{
@@ -73,7 +73,7 @@ defmodule ExStorage.Domain.Work do
         required: true,
       },
       %{
-        code: "concept",
+        code: "concepts",
         title: "Concepts",
         type: "tally",
         values: ["condept_001", "condept_002", "condept_003", "condept_004"]
