@@ -23,7 +23,8 @@ defmodule ExStorage.MixProject do
   defp deps do
     [
       {:httpoison, "~> 2.2.3"},
-      {:jason, "~> 1.4"}
+      {:jason, "~> 1.4"},
+      {:credo, "~> 1.7.12", only: [:dev, :test], runtime: false}
     ]
   end
 end

@@ -1,0 +1,30 @@
+# installer: https://github.com/Rafael24595/bash-hooks/blob/dev/install-pre-commit
+
+hooks:
+  remote:
+    repos:
+      - id: check-mix-context
+        origin: https://github.com/Rafael24595/bash-hooks
+        tag: 0.8.3
+        target: elixir/sh
+        name: check-mix-context.sh
+        expect: false
+        return: true
+        flags:
+          - project
+          - staged
+          - install
+
+      - id: run-mix-tests
+        origin: https://github.com/Rafael24595/bash-hooks
+        tag: 0.8.3
+        target: elixir/sh
+        name: run-mix-tests.sh
+
+      - id: run-credo
+        origin: https://github.com/Rafael24595/bash-hooks
+        tag: 0.8.3
+        target: elixir/sh
+        name: run-credo.sh
+        flags:
+          - strict
