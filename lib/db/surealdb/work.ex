@@ -1,4 +1,21 @@
 defmodule ExStorage.DB.SurrealDB.Work do
+  @moduledoc """
+  SurrealDB implementation of the `ExStorage.DB.Work` behaviour.
+
+  This module provides persistence for `ExStorage.Domain.Work` entities
+  using [SurrealDB](https://surrealdb.com/). It translates repository
+  operations into SurrealDB SQL queries via `ExStorage.DB.SurrealDB.Client`.
+
+  ## Supported operations
+
+    * `count/0` — Returns the total number of stored works.
+    * `find/2` — Retrieves a list of works with optional `limit` and `offset`.
+    * `find_one/1` — Retrieves a single work by its ID.
+    * `insert/1` — Persists a new work and returns the inserted entity.
+    * `delete/1` — Deletes a work by ID (or all works if `nil`) and returns
+      the deleted entity.
+  """
+
   @behaviour ExStorage.DB.Work
 
   alias ExStorage.DB.SurrealDB.Client, as: Client
@@ -52,7 +69,7 @@ defmodule ExStorage.DB.SurrealDB.Work do
     end
   end
 
-  def create(%ExStorage.Domain.Work{} = work) do
+  def insert(%ExStorage.Domain.Work{} = work) do
     json = Jason.encode!(ExStorage.Domain.Work.to_map(work))
     sql = "CREATE work CONTENT #{json};"
 

@@ -1,4 +1,18 @@
 defmodule ExStorage.Core.Work.StateServer do
+  @moduledoc """
+  A `GenServer` responsible for managing the state of work items in ExStorage.
+
+  This server provides:
+
+    * Storage and retrieval of the current `ExStorage.Core.Work.State`
+    * Insertion and deletion of works through the configured repository
+    * Pagination controls (`load_page/0`, `goto_page/1`, `prev_page/1`, `next_page/1`)
+    * Cursor management for navigating works (`increase_cursor/0`, `decrease_cursor/0`, `set_cursor/1`)
+
+  The server initializes with the repository defined in
+  `:ex_storage, :work_repo` unless explicitly provided.
+  """
+
   use GenServer
 
   alias ExStorage.Core.Utils
@@ -18,22 +32,35 @@ defmodule ExStorage.Core.Work.StateServer do
 
   def default_limit, do: @default_limit
 
-  def state(), do: GenServer.call(__MODULE__, :state)
+  def state, do: GenServer.call(__MODULE__, :state)
 
+  def insert(work), do: GenServer.call(__MODULE__, {:insert, work})
   def delete(id \\ nil), do: GenServer.call(__MODULE__, {:delete, id})
 
-  def load_page(), do: GenServer.call(__MODULE__, :load_page)
+  def load_page, do: GenServer.call(__MODULE__, :load_page)
   def load_page(limit), do: GenServer.call(__MODULE__, {:load_page, limit})
   def goto_page(page), do: GenServer.call(__MODULE__, {:goto_page, page})
   def prev_page(limit \\ nil), do: GenServer.call(__MODULE__, {:prev_page, limit})
   def next_page(limit \\ nil), do: GenServer.call(__MODULE__, {:next_page, limit})
 
-  def decrease_cursor(), do: GenServer.cast(__MODULE__, :decrease_cursor)
-  def increase_cursor(), do: GenServer.cast(__MODULE__, :increase_cursor)
+  def decrease_cursor, do: GenServer.cast(__MODULE__, :decrease_cursor)
+  def increase_cursor, do: GenServer.cast(__MODULE__, :increase_cursor)
   def set_cursor(cursor), do: GenServer.cast(__MODULE__, {:set_cursor, cursor})
 
   @impl true
   def handle_call(:state, _from, state), do: {:reply, state, state}
+
+  def handle_call({:insert, work}, _from, state) do
+    case state.repository.insert(work) do
+      {:ok, _} ->
+        fetch(state)
+
+      {:error, cause} ->
+        Log.error("An error occurred during work insert: #{inspect(cause)}")
+
+        {:reply, {:ok, state}, state}
+    end
+  end
 
   def handle_call({:delete, id}, _from, state) do
     case state.repository.delete(id) do

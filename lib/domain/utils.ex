@@ -1,4 +1,22 @@
 defmodule ExStorage.Domain.Utils do
+  @moduledoc """
+  Utility functions for converting field definitions and values into maps.
+
+  This module is primarily used to transform a list of field definitions
+  (with codes, types, and possible values) into a consistent map of
+  `key => value` pairs, based on the provided input values.
+
+  ## Supported field types
+
+    * `"string"` — Direct value extraction
+    * `"date"` — Direct value extraction
+    * `"list"` — Direct value extraction
+    * `"enum"` — Picks a single value from the `values` list based on cursor
+    * `"tally"` — Picks multiple values from the `values` list based on indexes
+
+  Fields with missing codes or invalid indexes are ignored.
+  """
+  
   def definition_to_map(definition, values) do
     definition
     |> Enum.reduce(%{}, fn d, acc ->
@@ -31,12 +49,17 @@ defmodule ExStorage.Domain.Utils do
     definition_value(key, values)
   end
 
+  defp definition_to_field(%{code: _key, type: "enum", values: []} = _field, _values) do
+    {nil, nil}
+  end
+
   defp definition_to_field(%{code: key, type: "enum", values: items} = _field, values) do
     value = Map.get(values, key, %{})
 
     case Map.get(value, :cursor) do
       cursor when cursor == nil ->
-        {nil, nil}
+        value = Enum.at(items, 0)
+        {key, value}
 
       cursor when cursor < 0 ->
         {nil, nil}

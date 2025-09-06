@@ -1,12 +1,30 @@
 defmodule ExStorage.TUI.Screens.WorkTable do
+  @moduledoc """
+  TUI screen for listing, navigating, and managing works.
+
+  This screen implements the `ExStorage.TUI.Screen` behaviour and acts as
+  the main interface for interacting with `ExStorage.Domain.Work` entities
+  through the terminal.
+
+  ## State
+
+  The screen’s state includes:
+
+    * `:show_help` — toggles whether the help overlay is displayed.
+  """
+
   @behaviour ExStorage.TUI.Screen
 
-  alias ExStorage.Core.Utils
   alias ExStorage.Core.NumberUtils
+  alias ExStorage.Core.Utils, as: CoreUtils
   alias ExStorage.Core.Work.StateServer
+  alias ExStorage.Domain.{Utils, Work}
+  alias ExStorage.TUI.Screens.ModalConfirm
+  alias ExStorage.TUI.Screens.ModalForm
   alias ExStorage.TUI.Screens.Modules
+  alias ExStorage.TUI.Screens.WorkView
 
-  def new_state() do
+  def new_state do
     %{
       show_help: false
     }
@@ -120,7 +138,7 @@ defmodule ExStorage.TUI.Screens.WorkTable do
   end
 
   def handle_event(%{show_help: false} = _state, {:char, "v"}) do
-    {ExStorage.TUI.Screens.WorkView, ExStorage.TUI.Screens.WorkView.new_state()}
+    {WorkView, WorkView.new_state()}
   end
 
   def handle_event(%{show_help: true} = state, {:char, "c"}) do
@@ -129,10 +147,10 @@ defmodule ExStorage.TUI.Screens.WorkTable do
   end
 
   def handle_event(%{show_help: false} = _state, {:char, "c"}) do
-    {ExStorage.TUI.Screens.ModalForm,
-     ExStorage.TUI.Screens.ModalForm.new_state(
+    {ModalForm,
+     ModalForm.new_state(
        "Create new Work",
-       ExStorage.Domain.Work.definition(),
+       Work.definition(),
        [
          {"s", "save", fn state -> save(state) end},
          {"c", "cancel", fn _state -> back() end},
@@ -145,8 +163,8 @@ defmodule ExStorage.TUI.Screens.WorkTable do
     work_state = StateServer.state()
     work = Enum.at(work_state.works, work_state.cursor)
 
-    {ExStorage.TUI.Screens.ModalConfirm,
-     ExStorage.TUI.Screens.ModalConfirm.new_state(
+    {ModalConfirm,
+     ModalConfirm.new_state(
        "The element '#{work.id}' will be deleted, are you sure?",
        [
          {"y", "yes", fn state -> delete(state, work.id) end},
@@ -159,13 +177,12 @@ defmodule ExStorage.TUI.Screens.WorkTable do
   def handle_event(state, {:char, "q"}), do: {:quit, state}
 
   def handle_event(%{show_help: false} = state, {:char, text}) do
-    cond do
-      String.match?(text, ~r/^\d+$/) ->
-        new_cursor = String.to_integer(text)
-        StateServer.set_cursor(new_cursor)
-
-      true ->
-        manage_text_as_basic_command(state, text)
+    if String.match?(text, ~r/^\d+$/) do
+      new_cursor = String.to_integer(text)
+      StateServer.set_cursor(new_cursor)
+      {:same, state}
+    else
+      manage_text_as_basic_command(state, text)
     end
   end
 
@@ -174,7 +191,7 @@ defmodule ExStorage.TUI.Screens.WorkTable do
   end
 
   defp manage_text_as_basic_command(state, text) do
-    case Utils.parse_basic_command(text) do
+    case CoreUtils.parse_basic_command(text) do
       {:cmd, "l", rest} ->
         {_, limit} = NumberUtils.integer_parse(rest, StateServer.default_limit())
         StateServer.load_page(limit)
@@ -206,13 +223,12 @@ defmodule ExStorage.TUI.Screens.WorkTable do
     fields = Map.get(state, :fields, %{})
     values = Map.get(state, :values, %{})
 
-    map = ExStorage.Domain.Utils.definition_to_map(fields, values)
-    work = ExStorage.Domain.Work.from_map(map)
+    map = Utils.definition_to_map(fields, values)
+    work = Work.from_map(map)
 
-    #TODO: Insert into data base.
-    Log.debug(work)
+    StateServer.insert(work)
 
-    {:same, state}
+    back()
   end
 
   defp delete(state, id) do
@@ -225,7 +241,7 @@ defmodule ExStorage.TUI.Screens.WorkTable do
     end
   end
 
-  defp back(), do: {ExStorage.TUI.Screens.WorkTable, new_state()}
+  defp back, do: {ExStorage.TUI.Screens.WorkTable, new_state()}
 
   defp quit(state), do: {:quit, state}
 end
