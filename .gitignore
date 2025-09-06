@@ -27,3 +27,5 @@ ex_storage-*.tar
 
 # Logs
 /log
+
+/.remote-scripts

@@ -1,4 +1,4 @@
-# installer: https://github.com/Rafael24595/bash-hooks/blob/dev/install-pre-commit
+# installer: https://github.com/Rafael24595/bash-hooks/blob/main/install-pre-commit
 
 hooks:
   remote:
@@ -15,11 +15,11 @@ hooks:
           - staged
           - install
 
-      - id: run-mix-tests
+      - id: run-mix-test
         origin: https://github.com/Rafael24595/bash-hooks
         tag: 0.8.3
         target: elixir/sh
-        name: run-mix-tests.sh
+        name: run-mix-test.sh
 
       - id: run-credo
         origin: https://github.com/Rafael24595/bash-hooks
