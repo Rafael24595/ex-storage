@@ -19,6 +19,7 @@ defmodule ExStorage.TUI.Screens.WorkTable do
   alias ExStorage.Core.Utils, as: CoreUtils
   alias ExStorage.Core.Work.StateServer
   alias ExStorage.Domain.{Utils, Work}
+  alias ExStorage.TUI.Screen.Constants
   alias ExStorage.TUI.Screens.ModalConfirm
   alias ExStorage.TUI.Screens.ModalForm
   alias ExStorage.TUI.Screens.Modules
@@ -38,20 +39,20 @@ defmodule ExStorage.TUI.Screens.WorkTable do
 
   @impl true
   def render(%{show_help: true} = _state) do
-    actions = [
-      {"↑ / ↓", "Move between works on the current page."},
-      {"← / →", "Move between different work pages."},
-      {"number", "Type an index to move the cursor to that work."},
+    custom_controls = [
       {"r", "Refresh the current page."},
       {"v", "Open a modal with the details of the selected work."},
       {"l number",
        "Set the number of items per page. If no value is given, the limit resets to the default."},
       {"p number",
        "Loads the specific page (starting from 0). If no value is given, the page resets to page 0."},
+      {"f", "Open a form modal to define the work filter."},
       {"c", "Open a form modal to create a new work."},
       {"d", "Delete the selected work."},
-      {"q", "Exit the application."}
+      {"q", "Exit the application."},
     ]
+
+    actions = Constants.items_table_help(nil, custom_controls)
 
     commands = [
       {"c", "continue"},
@@ -71,6 +72,7 @@ defmodule ExStorage.TUI.Screens.WorkTable do
       Modules.header_state(
         "Media Source",
         work_state.count,
+        work_state.count_filter,
         work_state.offset,
         work_state.last
       )
@@ -85,6 +87,7 @@ defmodule ExStorage.TUI.Screens.WorkTable do
       {"v", "view"},
       {"l", "limit"},
       {"p", "page"},
+      {"f", "filter"},
       "\n",
       {"c", "create"},
       {"d", "delete"},
@@ -226,7 +229,9 @@ defmodule ExStorage.TUI.Screens.WorkTable do
          {"c", "cancel", fn _state -> back() end},
          {"q", "quit", fn state -> quit(state) end}
        ],
-       StateServer.get_filter()
+       StateServer.get_filter(),
+       nil,
+       Constants.filter_help()
      )}
   end
 

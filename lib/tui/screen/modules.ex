@@ -85,17 +85,23 @@ defmodule ExStorage.TUI.Screens.Modules do
     IO.puts("")
   end
 
-  def header_state(title, count, from, to) do
+  def header_state(title, count, count_filter, from, to) do
     %{
       title: title,
       count: count,
+      count_filter: count_filter,
       from: from,
       to: to
     }
   end
 
-  def items_list(%{title: title, count: count, from: from, to: to}, rows, formatter) do
-    header = " #{title} (#{count}) [#{from} - #{to}] "
+  def items_list(%{title: title, count: count, count_filter: count_filter, from: from, to: to}, rows, formatter) do
+    filter = if count_filter == nil do
+      ""
+    else
+      "#{count_filter}/"
+    end
+    header = " #{title} (#{filter}#{count}) [#{from} - #{to}] "
 
     rows =
       Enum.with_index(rows)

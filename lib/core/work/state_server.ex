@@ -127,6 +127,8 @@ defmodule ExStorage.Core.Work.StateServer do
       state
       |> Map.put(:filter, filter)
       |> Map.put(:offset, 0)
+      |> Map.put(:works, [])
+      |> Map.put(:last, 0)
 
     fetch(new_state)
   end
@@ -174,13 +176,10 @@ defmodule ExStorage.Core.Work.StateServer do
 
     filter = DomainUtils.definition_to_map(filter_definition, filter_values)
 
-    Log.debug(filter)
-
     with {:ok, works} <- state.repository.find(limit, offset, filter),
-         {:ok, count} <- state.repository.count() do
-      len = length(works)
-      sum = if len < limit, do: min(len + offset, count), else: count
-
+         {:ok, count} <- state.repository.count(),
+         {:ok, count_filter} <- state.repository.count_filter(filter) do
+      sum = min(count_filter || count, count)
       offset = min(offset, sum)
 
       if offset == sum do
@@ -195,13 +194,11 @@ defmodule ExStorage.Core.Work.StateServer do
             |> Map.put(:count, count)
             |> Map.put(:offset, offset)
             |> Map.put(:last, last)
+            |> Map.put(:count_filter, count_filter)
 
           {:reply, {:ok, new_state}, new_state}
       end
     else
-      {:ok, []} ->
-        {:reply, {:ok, state}, state}
-
       {:error, reason} ->
         Log.error("An error occurred during work state server fetching", reason)
         {:reply, {:ok, state}, state}

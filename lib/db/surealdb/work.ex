@@ -26,9 +26,36 @@ defmodule ExStorage.DB.SurrealDB.Work do
       {:ok, [%{"result" => [%{"count" => count}]}]} ->
         {:ok, count}
 
+      {:ok, _} ->
+        {:ok, 0}
+
       {:error, reason} ->
         {:error, reason}
     end
+  end
+
+  def count_filter(nil), do: {:ok, nil}
+
+  def count_filter(filter) do
+    where = Utils.map_to_filter(filter || %{})
+
+    if where == "" do
+      {:ok, nil}
+    else
+      query = "SELECT count() FROM work #{where} GROUP BY count;"
+
+      case Client.query("test", "work", query) do
+        {:ok, [%{"result" => [%{"count" => count}]}]} ->
+          {:ok, count}
+
+        {:ok, _} ->
+          {:ok, 0}
+
+        {:error, reason} ->
+          {:error, reason}
+      end
+    end
+
   end
 
   def find(limit \\ nil, offset \\ nil, filter \\ nil) do
@@ -51,8 +78,6 @@ defmodule ExStorage.DB.SurrealDB.Work do
     clause = if clause == "", do: "", else: " #{clause}"
 
     query = "SELECT * FROM work#{clause};"
-
-    Log.debug(query)
 
     case Client.query("test", "work", query) do
       {:ok, [%{"result" => works}]} ->

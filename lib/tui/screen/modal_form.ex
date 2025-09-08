@@ -1,22 +1,30 @@
 defmodule ExStorage.TUI.Screens.ModalForm do
+  @moduledoc """
+  Interactive modal form screen for the TUI.
+
+  Supports multiple field types (`string`, `date`, `enum`, `list`, `tally`),
+  keyboard navigation, help display, and inline editing.
+  """
+  
   @behaviour ExStorage.TUI.Screen
 
-  alias ExStorage.Core.Utils
-  alias ExStorage.Core.ListUtils
   alias ExStorage.Core.DateUtils
+  alias ExStorage.Core.ListUtils
+  alias ExStorage.Core.Utils
   alias ExStorage.TUI.Screens.Formatter
   alias ExStorage.TUI.Screens.Modules
 
   @def_max_text 64
 
-  def new_state(message, fields, options, values \\ nil, cursor \\ nil) do
+  def new_state(message, fields, options, values \\ nil, cursor \\ nil, extra_help \\ nil) do
     %{
       show_help: false,
       title: message,
       fields: fields,
       options: options,
       values: values || %{},
-      cursor: cursor || 0
+      cursor: cursor || 0,
+      extra_help: extra_help || []
     }
   end
 
@@ -26,7 +34,7 @@ defmodule ExStorage.TUI.Screens.ModalForm do
   end
 
   @impl true
-  def render(%{show_help: true} = _state) do
+  def render(%{show_help: true} = state) do
     actions = [
       "Form",
       {"↑ / ↓", "Navigate between form fields."},
@@ -65,10 +73,14 @@ defmodule ExStorage.TUI.Screens.ModalForm do
       {"← / →", "Move between tally items."},
       {"\\f",
        "Type the name of an item (ignore case) to move the cursor. Use '*' as a wildcard for any characters."},
-      {"\\s", "If '*' added, select all itmes; otherwise select the focused item (it will appear with dashes, e.g. -item-)."},
+      {"\\s",
+       "If '*' added, select all itmes; otherwise select the focused item (it will appear with dashes, e.g. -item-)."},
       {"\\d", "If '*' added, clear the selection; otherwise delete focused item."},
       "\n"
     ]
+
+    extra_help = Map.get(state, :extra_help, [])
+    actions = Enum.concat(actions, extra_help)
 
     commands = [
       {"c", "continue"},
@@ -230,12 +242,10 @@ defmodule ExStorage.TUI.Screens.ModalForm do
   defp format_text_value(field, value) do
     max = Map.get(field, :max, @def_max_text)
 
-    cond do
-      value == nil || value.value == nil ->
-        String.duplicate(".", max)
-
-      true ->
-        String.pad_trailing(value.value, max)
+    if value == nil || value.value == nil do
+      String.duplicate(".", max)
+    else
+      String.pad_trailing(value.value, max)
     end
   end
 
@@ -715,18 +725,21 @@ defmodule ExStorage.TUI.Screens.ModalForm do
         list = Map.get(value, :value, [])
         cursor = list_index_or_default(field, list, value)
 
-        list =
-          case Enum.find_index(list, fn v -> v == cursor end) do
-            nil ->
-              list
-
-            index ->
-              List.delete_at(list, index)
-          end
+        list = delete_from_tally(list, cursor)
 
         value = Map.put(value, :value, list)
         values = Map.put(values, field.code, value)
         {:same, Map.put(state, :values, values)}
+    end
+  end
+
+  defp delete_from_tally(list, cursor) do
+    case Enum.find_index(list, fn v -> v == cursor end) do
+      nil ->
+        list
+
+      index ->
+        List.delete_at(list, index)
     end
   end
 

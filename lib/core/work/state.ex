@@ -13,6 +13,7 @@ defmodule ExStorage.Core.Work.State do
             filter: %{},
             cursor: 0,
             count: 0,
+            count_filter: 0,
             offset: 0,
             limit: 0,
             last: 0
@@ -23,6 +24,7 @@ defmodule ExStorage.Core.Work.State do
           filter: map(),
           cursor: integer(),
           count: integer(),
+          count_filter: integer() | nil,
           offset: integer(),
           limit: integer(),
           last: integer()
@@ -34,6 +36,7 @@ defmodule ExStorage.Core.Work.State do
       works: [],
       filter: %{},
       count: 0,
+      count_filter: nil,
       offset: 0,
       limit: 10,
       last: 0
