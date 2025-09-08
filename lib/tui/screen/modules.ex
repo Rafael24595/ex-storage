@@ -1,5 +1,11 @@
 defmodule ExStorage.TUI.Screens.Modules do
+  @moduledoc """
+  Provides terminal UI rendering helpers for displaying
+  help text, commands, lists, and tables...
+  """
+
   alias ExStorage.Core.ListUtils
+  alias ExStorage.TUI.Screens.Formatter
 
   def help(actions) do
     max_len =
@@ -111,14 +117,18 @@ defmodule ExStorage.TUI.Screens.Modules do
     IO.puts(header)
     IO.puts(limit)
 
-    Enum.each(rows, fn r -> IO.puts(r) end)
+    if Enum.empty?(rows) do
+      IO.puts("- No items found -")
+    else
+      Enum.each(rows, fn r -> IO.puts(r) end)
+    end
   end
 
   def items_table(header, columns) do
     source = "| #{header} |"
     source_limit = String.duplicate("-", String.length(source))
 
-    {:headers, headers, :rows, rows} = ExStorage.TUI.Screens.Formatter.format_table(columns)
+    {:headers, headers, :rows, rows} = Formatter.format_table(columns)
 
     limit = String.duplicate("-", String.length(headers))
     IO.puts(source_limit)
