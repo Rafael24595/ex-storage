@@ -1,4 +1,8 @@
 defmodule ExStorage.Core.NumberUtils do
+  @moduledoc """
+  Utility functions for safety parse values into number type.
+  """
+
   def integer_parse(str) do
     case Integer.parse(str) do
       {int, ""} -> {:ok, int}
@@ -9,7 +13,7 @@ defmodule ExStorage.Core.NumberUtils do
   def integer_parse(str, default) when is_integer(default) do
     case Integer.parse(str) do
       {int, ""} -> {:ok, int}
-      _ -> default
+      _ -> {:ok, default}
     end
   end
 
