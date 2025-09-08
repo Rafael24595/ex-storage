@@ -39,6 +39,13 @@ defmodule ExStorage.Domain.UtilsTest do
       assert Utils.definition_to_map(definition, values) == %{}
     end
 
+    test "ignores an enum definition with an not defined cursor" do
+      definition = [%{code: "type", type: "enum", values: ["type_001", "type_002"]}]
+      values = %{"type" => %{}}
+
+      assert Utils.definition_to_map(definition, values) == %{}
+    end
+
     test "handles a tally definition with valid cursors" do
       definition = [%{code: "tags", type: "tally", values: ["tag_001", "tag_002", "tag_003"]}]
       values = %{"tags" => %{:value => [0, 2]}}

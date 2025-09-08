@@ -16,7 +16,7 @@ defmodule ExStorage.Domain.Utils do
 
   Fields with missing codes or invalid indexes are ignored.
   """
-  
+
   def definition_to_map(definition, values) do
     definition
     |> Enum.reduce(%{}, fn d, acc ->
@@ -53,21 +53,24 @@ defmodule ExStorage.Domain.Utils do
     {nil, nil}
   end
 
-  defp definition_to_field(%{code: key, type: "enum", values: items} = _field, values) do
+  defp definition_to_field(%{code: key, type: "enum", values: items} = field, values) do
     value = Map.get(values, key, %{})
 
-    case Map.get(value, :cursor) do
-      cursor when cursor == nil ->
+    case {Map.get(value, :cursor), Map.get(field, :required, false)} do
+      {nil, true} ->
         value = Enum.at(items, 0)
         {key, value}
 
-      cursor when cursor < 0 ->
+      {nil, _required} ->
         {nil, nil}
 
-      cursor when cursor >= length(items) ->
+      {cursor, _required} when cursor < 0 ->
         {nil, nil}
 
-      cursor ->
+      {cursor, _required} when cursor >= length(items) ->
+        {nil, nil}
+
+      {cursor, _required} ->
         value = Enum.at(items, cursor)
         {key, value}
     end
