@@ -11,8 +11,8 @@ defmodule ExStorage.TUI.Loop do
     Terminal.enable_raw_mode()
 
     screen = %{
-      module: ExStorage.TUI.Screens.WorkTable,
-      state: ExStorage.TUI.Screens.WorkTable.new_state()
+      module: ExStorage.TUI.Screen.WorkTable,
+      state: ExStorage.TUI.Screen.WorkTable.new_state()
     }
 
     {:ok, _task} = Task.start_link(fn -> input_loop(self()) end)

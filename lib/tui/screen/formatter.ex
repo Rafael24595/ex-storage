@@ -1,4 +1,4 @@
-defmodule ExStorage.TUI.Screens.Formatter do
+defmodule ExStorage.TUI.Screen.Formatter do
   alias ExStorage.Core.Utils
 
   def format_table(columns) do

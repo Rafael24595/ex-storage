@@ -1,8 +1,8 @@
-defmodule ExStorage.TUI.Screens.WorkView do
+defmodule ExStorage.TUI.Screen.WorkView do
   @behaviour ExStorage.TUI.Screen
 
   alias ExStorage.Core.Work.StateServer
-  alias ExStorage.TUI.Screens.Modules
+  alias ExStorage.TUI.Screen.Modules
 
   def new_state() do
     %{
@@ -69,7 +69,7 @@ defmodule ExStorage.TUI.Screens.WorkView do
   end
 
   def handle_event(_state, {:char, "b"}) do
-    {ExStorage.TUI.Screens.WorkTable, ExStorage.TUI.Screens.WorkTable.new_state()}
+    {ExStorage.TUI.Screen.WorkTable, ExStorage.TUI.Screen.WorkTable.new_state()}
   end
 
   def handle_event(%{show_help: false} = state, {:char, "r"}) do

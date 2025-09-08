@@ -1,4 +1,4 @@
-defmodule ExStorage.TUI.Screens.ModalConfirm do
+defmodule ExStorage.TUI.Screen.ModalConfirm do
   @behaviour ExStorage.TUI.Screen
 
   def new_state(message, options, cursor \\ nil) do
@@ -26,8 +26,8 @@ defmodule ExStorage.TUI.Screens.ModalConfirm do
       {"c", "continue"}
     ]
 
-    ExStorage.TUI.Screens.Modules.help(actions)
-    ExStorage.TUI.Screens.Modules.commands(commands)
+    ExStorage.TUI.Screen.Modules.help(actions)
+    ExStorage.TUI.Screen.Modules.commands(commands)
   end
 
   def render(state) do
@@ -58,8 +58,8 @@ defmodule ExStorage.TUI.Screens.ModalConfirm do
 
     max_len = max(String.length(mess_format), String.length(keys_format))
 
-    mess_format = "|#{ExStorage.TUI.Screens.Formatter.center_text(mess_format, max_len)}|"
-    keys_format = "|#{ExStorage.TUI.Screens.Formatter.center_text(keys_format, max_len)}|"
+    mess_format = "|#{ExStorage.TUI.Screen.Formatter.center_text(mess_format, max_len)}|"
+    keys_format = "|#{ExStorage.TUI.Screen.Formatter.center_text(keys_format, max_len)}|"
 
     limit = String.duplicate("-", String.length(mess_format))
     IO.puts(limit)

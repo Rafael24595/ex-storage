@@ -1,4 +1,4 @@
-defmodule ExStorage.TUI.Screens.WorkTable do
+defmodule ExStorage.TUI.Screen.WorkTable do
   @moduledoc """
   TUI screen for listing, navigating, and managing works.
 
@@ -20,10 +20,10 @@ defmodule ExStorage.TUI.Screens.WorkTable do
   alias ExStorage.Core.Work.StateServer
   alias ExStorage.Domain.{Utils, Work}
   alias ExStorage.TUI.Screen.Constants
-  alias ExStorage.TUI.Screens.ModalConfirm
-  alias ExStorage.TUI.Screens.ModalForm
-  alias ExStorage.TUI.Screens.Modules
-  alias ExStorage.TUI.Screens.WorkView
+  alias ExStorage.TUI.Screen.ModalConfirm
+  alias ExStorage.TUI.Screen.ModalForm
+  alias ExStorage.TUI.Screen.Modules
+  alias ExStorage.TUI.Screen.WorkView
 
   def new_state do
     %{
@@ -277,7 +277,7 @@ defmodule ExStorage.TUI.Screens.WorkTable do
     end
   end
 
-  defp back, do: {ExStorage.TUI.Screens.WorkTable, new_state()}
+  defp back, do: {ExStorage.TUI.Screen.WorkTable, new_state()}
 
   defp quit(state), do: {:quit, state}
 end

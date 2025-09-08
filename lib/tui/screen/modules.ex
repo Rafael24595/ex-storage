@@ -1,11 +1,11 @@
-defmodule ExStorage.TUI.Screens.Modules do
+defmodule ExStorage.TUI.Screen.Modules do
   @moduledoc """
   Provides terminal UI rendering helpers for displaying
   help text, commands, lists, and tables...
   """
 
   alias ExStorage.Core.ListUtils
-  alias ExStorage.TUI.Screens.Formatter
+  alias ExStorage.TUI.Screen.Formatter
 
   def help(actions) do
     max_len =

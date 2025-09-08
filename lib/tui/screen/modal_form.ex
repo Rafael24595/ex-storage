@@ -1,18 +1,18 @@
-defmodule ExStorage.TUI.Screens.ModalForm do
+defmodule ExStorage.TUI.Screen.ModalForm do
   @moduledoc """
   Interactive modal form screen for the TUI.
 
   Supports multiple field types (`string`, `date`, `enum`, `list`, `tally`),
   keyboard navigation, help display, and inline editing.
   """
-  
+
   @behaviour ExStorage.TUI.Screen
 
   alias ExStorage.Core.DateUtils
   alias ExStorage.Core.ListUtils
   alias ExStorage.Core.Utils
-  alias ExStorage.TUI.Screens.Formatter
-  alias ExStorage.TUI.Screens.Modules
+  alias ExStorage.TUI.Screen.Formatter
+  alias ExStorage.TUI.Screen.Modules
 
   @def_max_text 64
 
