@@ -19,6 +19,7 @@ defmodule ExStorage.DB.SurrealDB.Work do
   @behaviour ExStorage.DB.Work
 
   alias ExStorage.DB.SurrealDB.Client, as: Client
+  alias ExStorage.DB.SurrealDB.Utils, as: Utils
 
   def count do
     case Client.query("test", "work", "SELECT count() FROM work GROUP BY count;") do
@@ -30,17 +31,30 @@ defmodule ExStorage.DB.SurrealDB.Work do
     end
   end
 
-  def find(limit \\ nil, offset \\ nil) do
+  def find(limit \\ nil, offset \\ nil, filter \\ nil) do
     limit = limit || 10
+    filter = filter || %{}
+
+    where = Utils.map_to_filter(filter)
 
     page =
       if limit != nil and offset != nil do
-        "LIMIT #{limit} START #{offset};"
+        "LIMIT #{limit} START #{offset}"
       else
         ""
       end
 
-    case Client.query("test", "work", "SELECT * FROM work #{page};") do
+    clause =
+      [where, page]
+      |> Enum.join(" ")
+
+    clause = if clause == "", do: "", else: " #{clause}"
+
+    query = "SELECT * FROM work#{clause};"
+
+    Log.debug(query)
+
+    case Client.query("test", "work", query) do
       {:ok, [%{"result" => works}]} ->
         {:ok, Enum.map(works, &ExStorage.Domain.Work.from_map/1)}
 

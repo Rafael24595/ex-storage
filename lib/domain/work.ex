@@ -1,6 +1,9 @@
 defmodule ExStorage.Domain.Work do
+  @moduledoc """
+  Represents a creative work (e.g., novel, film, videogame) in the ExStorage domain.
+  Provides struct definition, serialization helpers, and metadata for forms and filters.
+  """
 
-  #TODO: Redefine as atoms.
   @types ["novel", "film", "videogame", "other"]
 
   @enforce_keys [:title, :type]
@@ -35,6 +38,7 @@ defmodule ExStorage.Domain.Work do
 
   def to_map(%__MODULE__{} = work) do
     %{
+      id: work.id,
       title: work.title,
       type: work.type,
       creator: work.creator,
@@ -43,7 +47,11 @@ defmodule ExStorage.Domain.Work do
     }
   end
 
-  def definition() do
+  def types do
+    @types
+  end
+
+  def insert_definition do
     [
       %{
         code: "title",
@@ -69,8 +77,55 @@ defmodule ExStorage.Domain.Work do
         code: "type",
         title: "Type",
         type: "enum",
-        values: @types,
-        required: true,
+        values: types(),
+        required: true
+      },
+      %{
+        code: "concepts",
+        title: "Concepts",
+        type: "tally",
+        values: ["condept_001", "condept_002", "condept_003", "condept_004"]
+      }
+    ]
+  end
+
+  def filter_definition do
+    [
+      %{
+        code: "id",
+        title: "Id",
+        type: "string"
+      },
+      %{
+        code: "title",
+        title: "Title",
+        type: "string"
+      },
+      %{
+        code: "creator",
+        title: "Creator",
+        type: "string"
+      },
+      %{
+        code: "released_from",
+        title: "Released From",
+        type: "date"
+      },
+      %{
+        code: "released_to",
+        title: "Released To",
+        type: "date"
+      },
+      %{
+        code: "tags",
+        title: "Tags",
+        type: "list"
+      },
+      %{
+        code: "type",
+        title: "Type",
+        type: "enum",
+        values: types()
       },
       %{
         code: "concepts",

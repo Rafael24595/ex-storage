@@ -150,7 +150,7 @@ defmodule ExStorage.TUI.Screens.WorkTable do
     {ModalForm,
      ModalForm.new_state(
        "Create new Work",
-       Work.definition(),
+       Work.insert_definition(),
        [
          {"s", "save", fn state -> save(state) end},
          {"c", "cancel", fn _state -> back() end},
@@ -195,19 +195,39 @@ defmodule ExStorage.TUI.Screens.WorkTable do
       {:cmd, "l", rest} ->
         {_, limit} = NumberUtils.integer_parse(rest, StateServer.default_limit())
         StateServer.load_page(limit)
+        {:same, state}
 
       {:cmd, "p", rest} ->
         {_, page} = NumberUtils.integer_parse(rest, 0)
         StateServer.goto_page(page)
+        {:same, state}
 
       {:text, "l"} ->
         StateServer.load_page(StateServer.default_limit())
+        {:same, state}
 
       {:text, "p"} ->
         StateServer.goto_page(0)
-    end
+        {:same, state}
 
-    {:same, state}
+      {:text, "f"} ->
+        show_filter_modal()
+    end
+  end
+
+  def show_filter_modal do
+    {ModalForm,
+     ModalForm.new_state(
+       "Work Filter",
+       Work.filter_definition(),
+       [
+         {"a", "apply", fn state -> apply(state) end},
+         {"r", "reset", fn state -> reset(state) end},
+         {"c", "cancel", fn _state -> back() end},
+         {"q", "quit", fn state -> quit(state) end}
+       ],
+       StateServer.get_filter()
+     )}
   end
 
   defp work_formatter(cursor) do
@@ -217,6 +237,17 @@ defmodule ExStorage.TUI.Screens.WorkTable do
       marker = if idx == cursor, do: "›", else: " "
       "#{marker} #{idx}.- [#{type}] #{title}"
     end
+  end
+
+  defp apply(state) do
+    values = Map.get(state, :values, %{})
+    StateServer.set_filter(values)
+    back()
+  end
+
+  defp reset(_state) do
+    StateServer.set_filter(%{})
+    back()
   end
 
   defp save(state) do

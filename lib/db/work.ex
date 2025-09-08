@@ -18,7 +18,7 @@ defmodule ExStorage.DB.Work do
   @callback count() ::
               {:ok, integer()}
               | {:error, any()}
-  @callback find(limit :: integer() | nil, offset :: integer() | nil) ::
+  @callback find(limit :: integer() | nil, offset :: integer() | nil, filter :: map() | nil) ::
               {:ok, list(ExStorage.Domain.Work.t())}
               | {:error, any()}
   @callback insert(work :: ExStorage.Domain.Work.t()) ::

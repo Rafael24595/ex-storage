@@ -1,4 +1,4 @@
-defmodule ExStorage.Db.Surealdb.Utils do
+defmodule ExStorage.DB.SurrealDB.Utils do
   @moduledoc """
   Utility functions for transforming maps into filter strings
   compatible with SurrealDB queries.
@@ -8,17 +8,27 @@ defmodule ExStorage.Db.Surealdb.Utils do
   operators (`>`, `<`, `=`), wildcards (`*`), and negation (`!`).
   """
 
-  def map_to_filter(map) do
-    map
-    |> Enum.reduce([], fn {k, v}, acc ->
-      case field_to_filter(k, v) do
-        nil ->
-          acc
+  alias ExStorage.Core.NumberUtils
 
-        result ->
-          Enum.concat(acc, [result])
-      end
-    end)
+  def map_to_filter(map) do
+    filter =
+      map
+      |> Enum.reduce([], fn {k, v}, acc ->
+        case field_to_filter(k, v) do
+          nil ->
+            acc
+
+          result ->
+            Enum.concat(acc, [result])
+        end
+      end)
+      |> Enum.join(" AND ")
+
+    if filter == "" do
+      ""
+    else
+      "WHERE #{filter}"
+    end
   end
 
   defp field_to_filter(key, value) when is_binary(value) do
@@ -42,6 +52,8 @@ defmodule ExStorage.Db.Surealdb.Utils do
     "#{key} = #{value}"
   end
 
+  defp field_to_filter(_key, []), do: nil
+
   defp field_to_filter(key, value) when is_list(value) do
     list =
       Enum.map_join(value, ", ", fn
@@ -55,9 +67,7 @@ defmodule ExStorage.Db.Surealdb.Utils do
     "#{key} INSIDE [#{list}]"
   end
 
-  defp field_to_filter(_key, _value) do
-    nil
-  end
+  defp field_to_filter(_key, _value), do: nil
 
   defp string_to_filter(key, direction, value) do
     case classify_pattern(value) do
@@ -75,7 +85,7 @@ defmodule ExStorage.Db.Surealdb.Utils do
 
       {:operator, operator, equals, value} ->
         equals_symbol = if equals, do: "=", else: ""
-        {direction, "#{key} #{operator}#{equals_symbol} \"#{value}\""}
+        {direction, "#{key} #{operator}#{equals_symbol} #{value}"}
 
       :equals ->
         direction_symbol = if direction, do: "", else: "!"
@@ -106,8 +116,13 @@ defmodule ExStorage.Db.Surealdb.Utils do
     {operator, value} = String.next_grapheme(value)
 
     case String.next_grapheme(value) do
-      {"=", value} -> {:operator, operator, true, value}
-      _ -> {:operator, operator, false, value}
+      {"=", value} ->
+        {_, value} = NumberUtils.integer_parse(value, 0)
+        {:operator, operator, true, value}
+
+      _ ->
+        {_, value} = NumberUtils.integer_parse(value, 0)
+        {:operator, operator, false, value}
     end
   end
 end

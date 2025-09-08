@@ -16,6 +16,9 @@ defmodule ExStorage.Core.Work.StateServer do
   use GenServer
 
   alias ExStorage.Core.Utils
+  alias ExStorage.Core.Work.State
+  alias ExStorage.Domain.Utils, as: DomainUtils
+  alias ExStorage.Domain.Work, as: DomainWork
 
   @default_limit 10
 
@@ -27,7 +30,8 @@ defmodule ExStorage.Core.Work.StateServer do
   @impl true
   def init(repository) do
     repository = repository || Application.fetch_env!(:ex_storage, :work_repo)
-    {:ok, %ExStorage.Core.Work.State{repository: repository}}
+    state = State.new_state(repository)
+    {:ok, state}
   end
 
   def default_limit, do: @default_limit
@@ -42,6 +46,8 @@ defmodule ExStorage.Core.Work.StateServer do
   def goto_page(page), do: GenServer.call(__MODULE__, {:goto_page, page})
   def prev_page(limit \\ nil), do: GenServer.call(__MODULE__, {:prev_page, limit})
   def next_page(limit \\ nil), do: GenServer.call(__MODULE__, {:next_page, limit})
+  def get_filter, do: GenServer.call(__MODULE__, :get_filter)
+  def set_filter(filter), do: GenServer.call(__MODULE__, {:set_filter, filter})
 
   def decrease_cursor, do: GenServer.cast(__MODULE__, :decrease_cursor)
   def increase_cursor, do: GenServer.cast(__MODULE__, :increase_cursor)
@@ -79,7 +85,8 @@ defmodule ExStorage.Core.Work.StateServer do
   end
 
   def handle_call({:load_page, limit}, _from, state) do
-    fetch(state, limit, state.offset)
+    new_state = Map.put(state, :limit, limit)
+    fetch(new_state)
   end
 
   def handle_call({:goto_page, page}, _from, state) do
@@ -87,33 +94,62 @@ defmodule ExStorage.Core.Work.StateServer do
     offset = min(limit * page, limit * floor(state.count / limit))
     offset = max(offset, 0)
 
-    fetch(state, limit, offset)
+    new_state = Map.put(state, :limit, limit)
+
+    fetch(new_state, offset)
   end
 
   def handle_call({:prev_page, limit}, _from, state) do
     limit = limit || state.limit || @default_limit
     offset = max(state.offset - limit, 0)
 
-    fetch(state, limit, offset)
+    new_state = Map.put(state, :limit, limit)
+
+    fetch(new_state, offset)
   end
 
   def handle_call({:next_page, limit}, _from, state) do
     limit = limit || state.limit || @default_limit
     offset = state.offset + limit
 
-    fetch(state, limit, offset)
+    new_state = Map.put(state, :limit, limit)
+
+    fetch(new_state, offset)
+  end
+
+  def handle_call(:get_filter, _from, state) do
+    filter = Map.get(state, :filter, {})
+    {:reply, filter, state}
+  end
+
+  def handle_call({:set_filter, filter}, _from, state) when is_map(filter) do
+    new_state =
+      state
+      |> Map.put(:filter, filter)
+      |> Map.put(:offset, 0)
+
+    fetch(new_state)
+  end
+
+  def handle_call({:set_filter, filter}, _from, state) do
+    Log.error(
+      "An error occurred during work state server filter update: Filter is not a map",
+      filter
+    )
+
+    {:reply, {:ok, state}, state}
   end
 
   @impl true
   def handle_cast(:decrease_cursor, state) do
     new_cursor = Utils.decrease_cursor(state.cursor, state.works)
-    new_state = %{state | cursor: new_cursor}
+    new_state = Map.put(state, :cursor, new_cursor)
     {:noreply, new_state}
   end
 
   def handle_cast(:increase_cursor, state) do
     new_cursor = Utils.increase_cursor(state.cursor, state.works)
-    new_state = %{state | cursor: new_cursor}
+    new_state = Map.put(state, :cursor, new_cursor)
     {:noreply, new_state}
   end
 
@@ -121,40 +157,44 @@ defmodule ExStorage.Core.Work.StateServer do
     total = length(state.works)
     new_cursor = max(cursor, 0)
     new_cursor = min(new_cursor, max(total - 1, 0))
-    new_state = %{state | cursor: new_cursor}
+    new_state = Map.put(state, :cursor, new_cursor)
     {:noreply, new_state}
   end
 
   defp fetch(state) do
-    limit = max(state.limit, @default_limit)
-    fetch(state, limit, state.offset)
+    offset = Map.get(state, :offset, 0)
+    fetch(state, offset)
   end
 
-  defp fetch(state, limit, offset) do
-    with {:ok, works} <- state.repository.find(limit, offset),
+  defp fetch(state, offset) do
+    limit = Map.get(state, :limit, 10)
+
+    filter_definition = DomainWork.filter_definition()
+    filter_values = Map.get(state, :filter, %{})
+
+    filter = DomainUtils.definition_to_map(filter_definition, filter_values)
+
+    Log.debug(filter)
+
+    with {:ok, works} <- state.repository.find(limit, offset, filter),
          {:ok, count} <- state.repository.count() do
-      offset = min(offset, count)
+      len = length(works)
+      sum = if len < limit, do: min(len + offset, count), else: count
 
-      cond do
-        offset == state.offset and count == state.count and limit == state.limit ->
-          {:reply, {:ok, state}, state}
+      offset = min(offset, sum)
 
-        offset == count ->
-          new_state = Map.put(state, :limit, limit)
-          {:reply, {:ok, new_state}, new_state}
+      if offset == sum do
+        {:reply, {:ok, state}, state}
+      else
+          last = min(offset + limit, sum)
 
-        true ->
-          last = min(offset + limit, count)
-
-          new_state = %ExStorage.Core.Work.State{
+          new_state =
             state
-            | works: works,
-              cursor: 0,
-              count: count,
-              offset: offset,
-              limit: limit,
-              last: last
-          }
+            |> Map.put(:works, works)
+            |> Map.put(:cursor, 0)
+            |> Map.put(:count, count)
+            |> Map.put(:offset, offset)
+            |> Map.put(:last, last)
 
           {:reply, {:ok, new_state}, new_state}
       end
