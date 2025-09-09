@@ -5,7 +5,7 @@ defmodule ExStorage.DB.SurrealDB.Utils do
 
   This module handles conversion of binary, numeric, and list
   values into filter expressions, including support for
-  operators (`>`, `<`, `=`), wildcards (`*`), and negation (`!`).
+  operators (`>`, `<`, `=`), wildcards (`*`), range (`-`), and negation (`!`).
   """
 
   alias ExStorage.Core.NumberUtils
@@ -87,6 +87,9 @@ defmodule ExStorage.DB.SurrealDB.Utils do
         equals_symbol = if equals, do: "=", else: ""
         {direction, "#{key} #{operator}#{equals_symbol} #{value}"}
 
+      {:between, from, to} ->
+        {direction, "#{key} BETWEEN #{from} AND #{to}"}
+
       :equals ->
         direction_symbol = if direction, do: "", else: "!"
         {true, "#{key} #{direction_symbol}= \"#{value}\""}
@@ -107,6 +110,11 @@ defmodule ExStorage.DB.SurrealDB.Utils do
       String.starts_with?(value, ">") or String.starts_with?(value, "<") ->
         classify_operator(value)
 
+      String.match?(value, ~r/^-?\d+--?\d+$/) ->
+        [option1, option2] = String.split(value, "-")
+        {_, value1} = NumberUtils.integer_parse(option1, 0)
+        {_, value2} = NumberUtils.integer_parse(option2, 0)
+        {:between, value1, value2}
       true ->
         :equals
     end

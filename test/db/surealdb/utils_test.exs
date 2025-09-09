@@ -53,6 +53,17 @@ defmodule ExStorage.DB.SurrealDB.UtilsTest do
     end
   end
 
+  describe "map_to_filter/1 with number range values" do
+    test "integer value" do
+      assert Utils.map_to_filter(%{"release" => "1757256219551-1757418721712"}) ==
+               "WHERE release BETWEEN 1757256219551 AND 1757418721712"
+    end
+
+    test "float value" do
+      assert Utils.map_to_filter(%{"price" => 99.99}) == "WHERE price = 99.99"
+    end
+  end
+
   describe "map_to_filter/1 with list values" do
     test "simple list" do
       assert Utils.map_to_filter(%{"concepts" => ["concept_001", "concept_002"]}) ==
