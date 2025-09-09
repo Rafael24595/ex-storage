@@ -55,6 +55,51 @@ defmodule ExStorage.TUI.Screen.Modules do
     Enum.each(rows, fn r -> IO.puts(r) end)
   end
 
+  def help_with_pages(actions, page) do
+    len = length(actions) - 1
+
+    page =
+      page
+      |> max(0)
+      |> min(len)
+
+    help_header = [
+      "Help",
+      {"← / →", "Navigate between help pages."},
+      {"number", "Loads the specific page (starting from 0)."},
+      "\n"
+    ]
+
+    directions =
+    if page > 0 && len > 0 do
+      "< Prev page"
+    else
+      ""
+    end
+
+    directions =
+    if page <= len && len > 0 do
+      separeator = if directions == "", do: "", else: " | "
+      "#{directions}#{separeator}Next page >"
+    else
+      directions
+    end
+
+    help_footer = [
+      directions,
+      "\n"
+    ]
+
+    action_page = Enum.at(actions, page, [])
+
+    action_page =
+      help_header
+      |> Enum.concat(action_page)
+      |> Enum.concat(help_footer)
+
+    help(action_page)
+  end
+
   def commands(commands) do
     header = "[ Commands ] "
 

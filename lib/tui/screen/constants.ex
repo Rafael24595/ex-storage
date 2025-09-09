@@ -36,6 +36,7 @@ defmodule ExStorage.TUI.Screen.Constants do
       {"<=", "If a value starts with <=, it means greater than or equal to the specified value"},
       {">", "If a value starts with >, it means less than the specified value"},
       {">=", "If a value starts with >=, it means less than or equal to the specified value"},
+      {"number-number", "If two numeric values contais a - between then, it means range between values"},
       "\n"
     ]
   end

@@ -10,6 +10,7 @@ defmodule ExStorage.TUI.Screen.ModalForm do
 
   alias ExStorage.Core.DateUtils
   alias ExStorage.Core.ListUtils
+  alias ExStorage.Core.NumberUtils
   alias ExStorage.Core.Utils
   alias ExStorage.TUI.Screen.Formatter
   alias ExStorage.TUI.Screen.Modules
@@ -19,6 +20,7 @@ defmodule ExStorage.TUI.Screen.ModalForm do
   def new_state(message, fields, options, values \\ nil, cursor \\ nil, extra_help \\ nil) do
     %{
       show_help: false,
+      help_page: 0,
       title: message,
       fields: fields,
       options: options,
@@ -28,6 +30,58 @@ defmodule ExStorage.TUI.Screen.ModalForm do
     }
   end
 
+  def help_actions do
+    [
+      [
+        "Form",
+        {"↑ / ↓", "Navigate between form fields."},
+        {"text",
+         "Type the name of an field (ignore case) to move the cursor. Use '*' as a wildcard for any characters."},
+        {"enter",
+         "Fix the cursor to the field to interact with it, or release if already selected."},
+        "\n",
+        "Text input -> ...",
+        {"text", "Type the value."},
+        "\n",
+        "Date input -> yyyy-mm-dd hh:mm:ss",
+        {"now", "Sets the current date in ISO-8601 format."},
+        {"text", "Type the date with ISO-8601 format: yyyy-mm-dd or yyyy-mm-dd hh:mm:ss."},
+        "\n"
+      ],
+      [
+        "List input -> [ ... ]",
+        {"← / →", "Move between list items."},
+        {"text", "Type the values separated by space."},
+        {"\\f",
+         "Type the name of an item (ignore case) to move the cursor. Use '*' as a wildcard for any characters."},
+        {"\\d", "If '*' added, clear the list; otherwise delete focused item."},
+        {"\\h", "Append items to head."},
+        {"\\t", "Append items to tail."},
+        {"\\c", "Append items after cursor."},
+        {"\\r", "Append items at cursor position, replacing it."},
+        "\n"
+      ],
+      [
+        "Enum input -> | ... |",
+        {"← / →", "Move between enum items."},
+        {"text",
+         "Type the name of an item (ignore case) to move the cursor. Use '*' as a wildcard for any characters."},
+        {"\\f",
+         "Type the name of an item (ignore case) to move the cursor. Use '*' as a wildcard for any characters."},
+        {"\\d",
+         "Delete the focused item; if the field is required, the first element will be selected."},
+        "Tally input -> ( ... )",
+        {"← / →", "Move between tally items."},
+        {"\\f",
+         "Type the name of an item (ignore case) to move the cursor. Use '*' as a wildcard for any characters."},
+        {"\\s",
+         "If '*' added, select all itmes; otherwise select the focused item (it will appear with dashes, e.g. -item-)."},
+        {"\\d", "If '*' added, clear the selection; otherwise delete focused item."},
+        "\n"
+      ]
+    ]
+  end
+
   @impl true
   def onload(state) do
     render(state)
@@ -35,59 +89,19 @@ defmodule ExStorage.TUI.Screen.ModalForm do
 
   @impl true
   def render(%{show_help: true} = state) do
-    actions = [
-      "Form",
-      {"↑ / ↓", "Navigate between form fields."},
-      {"text",
-       "Type the name of an field (ignore case) to move the cursor. Use '*' as a wildcard for any characters."},
-      {"enter",
-       "Fix the cursor to the field to interact with it, or release if already selected."},
-      "\n",
-      "Text input -> ...",
-      {"text", "Type the value."},
-      "\n",
-      "Date input -> yyyy-mm-dd hh:mm:ss",
-      {"now", "Sets the current date in ISO-8601 format."},
-      {"text", "Type the date with ISO-8601 format: yyyy-mm-dd or yyyy-mm-dd hh:mm:ss."},
-      "\n",
-      "List input -> [ ... ]",
-      {"← / →", "Move between list items."},
-      {"text", "Type the values separated by space."},
-      {"\\f",
-       "Type the name of an item (ignore case) to move the cursor. Use '*' as a wildcard for any characters."},
-      {"\\d", "If '*' added, clear the list; otherwise delete focused item."},
-      {"\\h", "Append items to head."},
-      {"\\t", "Append items to tail."},
-      {"\\c", "Append items after cursor."},
-      {"\\r", "Append items at cursor position, replacing it."},
-      "\n",
-      "Enum input -> | ... |",
-      {"← / →", "Move between enum items."},
-      {"text",
-       "Type the name of an item (ignore case) to move the cursor. Use '*' as a wildcard for any characters."},
-      {"\\f",
-       "Type the name of an item (ignore case) to move the cursor. Use '*' as a wildcard for any characters."},
-      {"\\d",
-       "Delete the focused item; if the field is required, the first element will be selected."},
-      "Tally input -> ( ... )",
-      {"← / →", "Move between tally items."},
-      {"\\f",
-       "Type the name of an item (ignore case) to move the cursor. Use '*' as a wildcard for any characters."},
-      {"\\s",
-       "If '*' added, select all itmes; otherwise select the focused item (it will appear with dashes, e.g. -item-)."},
-      {"\\d", "If '*' added, clear the selection; otherwise delete focused item."},
-      "\n"
-    ]
-
     extra_help = Map.get(state, :extra_help, [])
-    actions = Enum.concat(actions, extra_help)
+
+    actions = help_actions()
+    actions = Enum.concat(actions, [extra_help])
+
+    page = Map.get(state, :help_page, 0)
 
     commands = [
       {"c", "continue"},
       {"q", "quit"}
     ]
 
-    Modules.help(actions)
+    Modules.help_with_pages(actions, page)
     Modules.commands(commands)
   end
 
@@ -250,24 +264,36 @@ defmodule ExStorage.TUI.Screen.ModalForm do
   end
 
   @impl true
-  def handle_event(state, :up) do
+  def handle_event(%{show_help: false} = state, :up) do
     select = Map.get(state, :select, false)
     move_cursor(state, :up, select)
   end
 
-  def handle_event(state, :down) do
+  def handle_event(%{show_help: false} = state, :down) do
     select = Map.get(state, :select, false)
     move_cursor(state, :down, select)
   end
 
-  def handle_event(state, :left) do
+  def handle_event(%{show_help: false} = state, :left) do
     select = Map.get(state, :select, false)
     list_navigate(state, &Utils.decrease_cursor/2, select)
   end
 
-  def handle_event(state, :right) do
+  def handle_event(%{show_help: false} = state, :right) do
     select = Map.get(state, :select, false)
     list_navigate(state, &Utils.increase_cursor/2, select)
+  end
+
+  def handle_event(%{show_help: true} = state, :left) do
+    help_page = Map.get(state, :help_page, 0)
+    new_page = Utils.decrease_cursor(help_page, help_actions())
+    {:same, Map.put(state, :help_page, new_page)}
+  end
+
+  def handle_event(%{show_help: true} = state, :right) do
+    help_page = Map.get(state, :help_page, 0)
+    new_page = Utils.increase_cursor(help_page, help_actions())
+    {:same, Map.put(state, :help_page, new_page)}
   end
 
   def handle_event(state, :enter) do
@@ -283,18 +309,29 @@ defmodule ExStorage.TUI.Screen.ModalForm do
   end
 
   def handle_event(%{show_help: false} = state, {:char, "h"}) do
-    state = Map.put(state, :show_help, true)
-    {:same, state}
+    {:same, Map.put(state, :show_help, true)}
   end
 
   def handle_event(%{show_help: true} = state, {:char, "c"}) do
-    state = Map.put(state, :show_help, false)
-    {:same, state}
+    {:same, Map.put(state, :show_help, false)}
   end
 
-  def handle_event(state, {:char, text}) do
+  def handle_event(%{show_help: true} = state, {:char, "q"}), do: {:quit, state}
+
+  def handle_event(%{show_help: false} = state, {:char, text}) do
     select = Map.get(state, :select, false)
     manage_option(state, text, select)
+  end
+
+  def handle_event(%{show_help: true} = state, {:char, text}) do
+    {_, help_page} = NumberUtils.integer_parse(text, 0)
+
+    new_page =
+      help_page
+      |> min(length(help_actions()))
+      |> max(0)
+
+    {:same, Map.put(state, :help_page, new_page)}
   end
 
   def handle_event(state, _) do
