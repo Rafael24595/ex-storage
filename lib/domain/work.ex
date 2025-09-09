@@ -3,6 +3,7 @@ defmodule ExStorage.Domain.Work do
   Represents a creative work (e.g., novel, film, videogame) in the ExStorage domain.
   Provides struct definition, serialization helpers, and metadata for forms and filters.
   """
+  alias ExStorage.Core.NumberUtils
 
   @types ["novel", "film", "videogame", "other"]
 
@@ -134,5 +135,39 @@ defmodule ExStorage.Domain.Work do
         values: ["condept_001", "condept_002", "condept_003", "condept_004"]
       }
     ]
+  end
+
+  def fix_filter_map(filter) do
+    filter
+    |> fix_released_filter()
+  end
+
+   defp fix_released_filter(filter) do
+    filter =
+      case {Map.get(filter, "released_from"), Map.get(filter, "released_to")} do
+        {nil, nil} ->
+          filter
+
+        {from, nil} ->
+          {_, from_int} = NumberUtils.integer_parse(from, nil)
+          Map.put(filter, "released", from_int)
+
+        {nil, to} ->
+          {_, to_int} = NumberUtils.integer_parse(to, nil)
+          Map.put(filter, "released", to_int)
+
+        {from, to} ->
+          {_, from_int} = NumberUtils.integer_parse(from, nil)
+          {_, to_int} = NumberUtils.integer_parse(to, nil)
+          released = if from_int != nil && to_int != nil, do: "#{from_int}-#{to_int}", else: nil
+          Map.put(filter, "released", released)
+
+        _ ->
+          filter
+      end
+
+    filter
+    |> Map.delete("released_from")
+    |> Map.delete("released_to")
   end
 end

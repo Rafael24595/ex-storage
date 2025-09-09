@@ -10,6 +10,10 @@ defmodule ExStorage.Core.NumberUtils do
     end
   end
 
+  def integer_parse(str, _default) when is_integer(str) do
+    {:ok, str}
+  end
+
   def integer_parse(str, default) when is_integer(default) do
     case Integer.parse(str) do
       {int, ""} -> {:ok, int}
