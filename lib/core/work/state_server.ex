@@ -175,6 +175,7 @@ defmodule ExStorage.Core.Work.StateServer do
     filter_values = Map.get(state, :filter, %{})
 
     filter = DomainUtils.definition_to_map(filter_definition, filter_values)
+    filter = DomainWork.fix_filter_map(filter)
 
     with {:ok, works} <- state.repository.find(limit, offset, filter),
          {:ok, count} <- state.repository.count(),

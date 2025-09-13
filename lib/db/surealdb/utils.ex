@@ -88,7 +88,7 @@ defmodule ExStorage.DB.SurrealDB.Utils do
         {direction, "#{key} #{operator}#{equals_symbol} #{value}"}
 
       {:between, from, to} ->
-        {direction, "#{key} BETWEEN #{from} AND #{to}"}
+        {direction, "#{key} >= #{from} AND #{key} <= #{to}"}
 
       :equals ->
         direction_symbol = if direction, do: "", else: "!"

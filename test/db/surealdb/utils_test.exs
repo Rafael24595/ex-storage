@@ -56,7 +56,7 @@ defmodule ExStorage.DB.SurrealDB.UtilsTest do
   describe "map_to_filter/1 with number range values" do
     test "integer value" do
       assert Utils.map_to_filter(%{"release" => "1757256219551-1757418721712"}) ==
-               "WHERE release BETWEEN 1757256219551 AND 1757418721712"
+               "WHERE release >= 1757256219551 AND release <= 1757418721712"
     end
 
     test "float value" do

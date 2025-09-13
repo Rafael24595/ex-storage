@@ -140,6 +140,7 @@ defmodule ExStorage.Domain.Work do
   def fix_filter_map(filter) do
     filter
     |> fix_released_filter()
+    |> remove_invalid_keys()
   end
 
    defp fix_released_filter(filter) do
@@ -169,5 +170,13 @@ defmodule ExStorage.Domain.Work do
     filter
     |> Map.delete("released_from")
     |> Map.delete("released_to")
+  end
+
+  defp remove_invalid_keys(filter) do
+    valid_codes =
+      insert_definition()
+      |> Enum.map(& &1.code)
+
+    Map.take(filter, valid_codes)
   end
 end
