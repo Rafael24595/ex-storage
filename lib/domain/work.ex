@@ -3,6 +3,7 @@ defmodule ExStorage.Domain.Work do
   Represents a creative work (e.g., novel, film, videogame) in the ExStorage domain.
   Provides struct definition, serialization helpers, and metadata for forms and filters.
   """
+  alias ExStorage.Core.DateUtils
   alias ExStorage.Core.NumberUtils
 
   @types ["novel", "film", "videogame", "other"]
@@ -50,6 +51,24 @@ defmodule ExStorage.Domain.Work do
 
   def types do
     @types
+  end
+
+  def to_columns(works) when is_list(works) do
+    [
+      {"Title", works
+        |> Enum.map(& &1.title)
+      },
+      {"Type", works
+        |> Enum.map(& &1.type)},
+      {"Released", works
+        |> Enum.map(& DateUtils.from_millis(&1.released))},
+      {"Creator", works
+        |> Enum.map(& &1.creator)}
+    ]
+  end
+
+  def to_columns(work) do
+    to_columns([work])
   end
 
   def insert_definition do
@@ -162,9 +181,6 @@ defmodule ExStorage.Domain.Work do
           {_, to_int} = NumberUtils.integer_parse(to, nil)
           released = if from_int != nil && to_int != nil, do: "#{from_int}-#{to_int}", else: nil
           Map.put(filter, "released", released)
-
-        _ ->
-          filter
       end
 
     filter

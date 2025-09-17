@@ -2,9 +2,11 @@ defmodule ExStorage.TUI.Screen.WorkView do
   @behaviour ExStorage.TUI.Screen
 
   alias ExStorage.Core.Work.StateServer
+  alias ExStorage.Domain.Work
   alias ExStorage.TUI.Screen.Modules
+  alias ExStorage.TUI.Screen.WorkTable
 
-  def new_state() do
+  def new_state do
     %{
       show_help: false
     }
@@ -37,13 +39,7 @@ defmodule ExStorage.TUI.Screen.WorkView do
     work_state = StateServer.state()
     work = Enum.at(work_state.works, work_state.cursor)
 
-    columns = [
-      {"Title", [work.title]},
-      {"Type", [work.type]},
-      {"Released", [Integer.to_string(work.released)]},
-      {"Creator", [work.creator]}
-    ]
-
+    columns = Work.to_columns(work)
     header = "Source: #{work.id}"
     Modules.items_table(header, columns)
 
@@ -69,7 +65,7 @@ defmodule ExStorage.TUI.Screen.WorkView do
   end
 
   def handle_event(_state, {:char, "b"}) do
-    {ExStorage.TUI.Screen.WorkTable, ExStorage.TUI.Screen.WorkTable.new_state()}
+    {WorkTable, WorkTable.new_state()}
   end
 
   def handle_event(%{show_help: false} = state, {:char, "r"}) do
