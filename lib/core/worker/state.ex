@@ -1,15 +1,10 @@
-defmodule ExStorage.Core.Work.State do
-  @moduledoc """
-  Represents the state of work browsing and filtering within the system.
+defmodule ExStorage.Core.Worker.State do
+  @type repository :: module()
+  @type service :: module()
 
-  Keeps track of the current repository, applied filters, pagination (cursor, offset, limit),
-  and the total count of available works.
-  """
-
-  @type repo_module :: module()
-
-  defstruct repository: nil,
-            works: [],
+  defstruct service: nil,
+            repository: nil,
+            items: [],
             filter: %{},
             cursor: 0,
             count: 0,
@@ -19,8 +14,9 @@ defmodule ExStorage.Core.Work.State do
             last: 0
 
   @type t :: %__MODULE__{
-          repository: repo_module(),
-          works: list(ExStorage.Domain.Work.t()),
+          service: service(),
+          repository: repository(),
+          items: list(),
           filter: map(),
           cursor: integer(),
           count: integer(),
@@ -30,10 +26,11 @@ defmodule ExStorage.Core.Work.State do
           last: integer()
         }
 
-  def new_state(repository) do
-    %ExStorage.Core.Work.State{
+  def new_state(service, repository) do
+    %ExStorage.Core.Worker.State{
+      service: service,
       repository: repository,
-      works: [],
+      items: [],
       filter: %{},
       count: 0,
       count_filter: nil,

@@ -1,4 +1,4 @@
-defmodule ExStorage.DB.Work do
+defmodule ExStorage.DB.WorkRepository do
   @moduledoc """
   Behaviour definition for work repositories in ExStorage.
 

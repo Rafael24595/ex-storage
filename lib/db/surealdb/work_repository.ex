@@ -1,6 +1,6 @@
-defmodule ExStorage.DB.SurrealDB.Work do
+defmodule ExStorage.DB.SurrealDB.WorkRepository do
   @moduledoc """
-  SurrealDB implementation of the `ExStorage.DB.Work` behaviour.
+  SurrealDB implementation of the `ExStorage.DB.WorkRepository` behaviour.
 
   This module provides persistence for `ExStorage.Domain.Work` entities
   using [SurrealDB](https://surrealdb.com/). It translates repository
@@ -16,10 +16,11 @@ defmodule ExStorage.DB.SurrealDB.Work do
       the deleted entity.
   """
 
-  @behaviour ExStorage.DB.Work
+  @behaviour ExStorage.DB.WorkRepository
 
   alias ExStorage.DB.SurrealDB.Client, as: Client
   alias ExStorage.DB.SurrealDB.Utils, as: Utils
+  alias ExStorage.Domain.Work, as: DomainWork
 
   def count do
     case Client.query("test", "work", "SELECT count() FROM work GROUP BY count;") do
@@ -81,7 +82,7 @@ defmodule ExStorage.DB.SurrealDB.Work do
 
     case Client.query("test", "work", query) do
       {:ok, [%{"result" => works}]} ->
-        {:ok, Enum.map(works, &ExStorage.Domain.Work.from_map/1)}
+        {:ok, Enum.map(works, &DomainWork.from_map/1)}
 
       {:ok, []} ->
         {:ok, []}
@@ -95,7 +96,7 @@ defmodule ExStorage.DB.SurrealDB.Work do
     if id != nil do
       case Client.query("test", "work", "SELECT * FROM #{id};") do
         {:ok, [%{"result" => works}]} ->
-          {:ok, ExStorage.Domain.Work.from_map(hd(works))}
+          {:ok, DomainWork.from_map(hd(works))}
 
         {:ok, []} ->
           {:ok, nil}
@@ -108,13 +109,13 @@ defmodule ExStorage.DB.SurrealDB.Work do
     end
   end
 
-  def insert(%ExStorage.Domain.Work{} = work) do
-    json = Jason.encode!(ExStorage.Domain.Work.to_map(work))
+  def insert(%DomainWork{} = work) do
+    json = Jason.encode!(DomainWork.to_map(work))
     sql = "CREATE work CONTENT #{json};"
 
     case Client.query("test", "work", sql) do
       {:ok, [%{"result" => works}]} ->
-        {:ok, Enum.map(works, &ExStorage.Domain.Work.from_map/1)}
+        {:ok, Enum.map(works, &DomainWork.from_map/1)}
 
       {:error, reason} ->
         {:error, reason}

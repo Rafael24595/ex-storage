@@ -17,13 +17,15 @@ defmodule ExStorage.TUI.Screen.WorkTable do
 
   alias ExStorage.Core.NumberUtils
   alias ExStorage.Core.Utils, as: CoreUtils
-  alias ExStorage.Core.Work.StateServer
+  alias ExStorage.Core.Worker.StateServer
   alias ExStorage.Domain.{Utils, Work}
   alias ExStorage.TUI.Screen.Constants
   alias ExStorage.TUI.Screen.ModalConfirm
   alias ExStorage.TUI.Screen.ModalForm
   alias ExStorage.TUI.Screen.Modules
   alias ExStorage.TUI.Screen.WorkView
+
+  @pid :work
 
   def new_state do
     %{
@@ -33,7 +35,7 @@ defmodule ExStorage.TUI.Screen.WorkTable do
 
   @impl true
   def onload(state) do
-    StateServer.load_page()
+    StateServer.load_page(@pid)
     render(state)
   end
 
@@ -64,8 +66,8 @@ defmodule ExStorage.TUI.Screen.WorkTable do
   end
 
   def render(_state) do
-    work_state = StateServer.state()
-    works = work_state.works
+    work_state = StateServer.state(@pid)
+    works = work_state.items
     cursor = work_state.cursor
 
     header =
@@ -99,17 +101,17 @@ defmodule ExStorage.TUI.Screen.WorkTable do
 
   @impl true
   def handle_event(%{show_help: false} = state, :up) do
-    StateServer.decrease_cursor()
+    StateServer.decrease_cursor(@pid)
     {:same, state}
   end
 
   def handle_event(%{show_help: false} = state, :down) do
-    StateServer.increase_cursor()
+    StateServer.increase_cursor(@pid)
     {:same, state}
   end
 
   def handle_event(%{show_help: false} = state, :left) do
-    case StateServer.prev_page() do
+    case StateServer.prev_page(@pid) do
       {:same, _} ->
         {:keep, state}
 
@@ -119,7 +121,7 @@ defmodule ExStorage.TUI.Screen.WorkTable do
   end
 
   def handle_event(%{show_help: false} = state, :right) do
-    case StateServer.next_page() do
+    case StateServer.next_page(@pid) do
       {:same, _} ->
         {:same, state}
 
@@ -136,7 +138,7 @@ defmodule ExStorage.TUI.Screen.WorkTable do
   end
 
   def handle_event(%{show_help: false} = state, {:char, "r"}) do
-    StateServer.load_page()
+    StateServer.load_page(@pid)
     {:same, state}
   end
 
@@ -163,8 +165,8 @@ defmodule ExStorage.TUI.Screen.WorkTable do
   end
 
   def handle_event(%{show_help: false} = _state, {:char, "d"}) do
-    work_state = StateServer.state()
-    work = Enum.at(work_state.works, work_state.cursor)
+    work_state = StateServer.state(@pid)
+    work = Enum.at(work_state.items, work_state.cursor)
 
     {ModalConfirm,
      ModalConfirm.new_state(
@@ -182,7 +184,7 @@ defmodule ExStorage.TUI.Screen.WorkTable do
   def handle_event(%{show_help: false} = state, {:char, text}) do
     if String.match?(text, ~r/^\d+$/) do
       new_cursor = String.to_integer(text)
-      StateServer.set_cursor(new_cursor)
+      StateServer.set_cursor(@pid, new_cursor)
       {:same, state}
     else
       manage_text_as_basic_command(state, text)
@@ -197,20 +199,20 @@ defmodule ExStorage.TUI.Screen.WorkTable do
     case CoreUtils.parse_basic_command(text) do
       {:cmd, "l", rest} ->
         {_, limit} = NumberUtils.integer_parse(rest, StateServer.default_limit())
-        StateServer.load_page(limit)
+        StateServer.load_page(@pid, limit)
         {:same, state}
 
       {:cmd, "p", rest} ->
         {_, page} = NumberUtils.integer_parse(rest, 0)
-        StateServer.goto_page(page)
+        StateServer.goto_page(@pid, page)
         {:same, state}
 
       {:text, "l"} ->
-        StateServer.load_page(StateServer.default_limit())
+        StateServer.load_page(@pid, StateServer.default_limit())
         {:same, state}
 
       {:text, "p"} ->
-        StateServer.goto_page(0)
+        StateServer.goto_page(@pid, 0)
         {:same, state}
 
       {:text, "f"} ->
@@ -229,7 +231,7 @@ defmodule ExStorage.TUI.Screen.WorkTable do
          {"c", "cancel", fn _state -> back() end},
          {"q", "quit", fn state -> quit(state) end}
        ],
-       StateServer.get_filter(),
+       StateServer.get_filter(@pid),
        nil,
        Constants.filter_help()
      )}
@@ -246,12 +248,12 @@ defmodule ExStorage.TUI.Screen.WorkTable do
 
   defp apply(state) do
     values = Map.get(state, :values, %{})
-    StateServer.set_filter(values)
+    StateServer.set_filter(@pid, values)
     back()
   end
 
   defp reset(_state) do
-    StateServer.set_filter(%{})
+    StateServer.set_filter(@pid, %{})
     back()
   end
 
@@ -262,13 +264,13 @@ defmodule ExStorage.TUI.Screen.WorkTable do
     map = Utils.definition_to_map(fields, values)
     work = Work.from_map(map)
 
-    StateServer.insert(work)
+    StateServer.insert(@pid, work)
 
     back()
   end
 
   defp delete(state, id) do
-    case StateServer.delete(id) do
+    case StateServer.delete(@pid, id) do
       {:same, _} ->
         {:keep, state}
 

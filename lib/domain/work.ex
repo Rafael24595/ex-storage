@@ -56,8 +56,7 @@ defmodule ExStorage.Domain.Work do
   def to_columns(works) when is_list(works) do
     [
       {"Title", works
-        |> Enum.map(& &1.title)
-      },
+        |> Enum.map(& &1.title)},
       {"Type", works
         |> Enum.map(& &1.type)},
       {"Released", works
