@@ -25,18 +25,22 @@ defmodule ExStorage.Core.Utils do
     String.downcase(a) == String.downcase(b)
   end
 
+  def pattern_to_regex(pattern) do
+    rest =
+      pattern
+      |> String.trim()
+      |> String.downcase()
+      |> Regex.escape()
+      |> String.replace("\\*", ".*")
+
+    Regex.compile!("^#{rest}$")
+  end
+
   def match_index(list, pattern, extractor) do
     try do
       cond do
         String.contains?(pattern, "*") ->
-          rest =
-            pattern
-            |> String.trim()
-            |> String.downcase()
-            |> Regex.escape()
-            |> String.replace("\\*", ".*")
-
-          regex = Regex.compile!("^#{rest}$")
+          regex = pattern_to_regex(pattern)
 
           Enum.find_index(list, fn i ->
             v = extractor.(i)

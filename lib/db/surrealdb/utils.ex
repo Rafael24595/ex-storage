@@ -115,6 +115,7 @@ defmodule ExStorage.DB.SurrealDB.Utils do
         {_, value1} = NumberUtils.integer_parse(option1, 0)
         {_, value2} = NumberUtils.integer_parse(option2, 0)
         {:between, value1, value2}
+
       true ->
         :equals
     end

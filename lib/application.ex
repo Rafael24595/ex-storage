@@ -11,7 +11,7 @@ defmodule ExStorage.Application do
     children = [
       {ExStorage.Log.Logger, session_id},
       {ExStorage.Core.Worker.StateServer, {:work, work_serv, work_repo}},
-      ExStorage.DB.ClientSupervisor,
+      ExStorage.DB.Supervisor,
       ExStorage.TUI.Loop
     ]
     opts = [strategy: :one_for_one, name: ExStorage.Supervisor]
