@@ -8,9 +8,9 @@ defmodule ExStorage.DB.Local.FormatState do
     items: list(),
   }
 
-  def new_state() do
+  def new_state(items) do
     %ExStorage.DB.Local.FormatState{
-      items: [],
+      items: items,
     }
   end
 end

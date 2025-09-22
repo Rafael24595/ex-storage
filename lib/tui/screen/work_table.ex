@@ -17,7 +17,9 @@ defmodule ExStorage.TUI.Screen.WorkTable do
 
   alias ExStorage.Core.NumberUtils
   alias ExStorage.Core.Utils, as: CoreUtils
+  alias ExStorage.Core.Worker.FormatTools
   alias ExStorage.Core.Worker.StateServer
+  alias ExStorage.Core.Worker.WorkService
   alias ExStorage.Domain.{Utils, Work}
   alias ExStorage.TUI.Screen.Constants
   alias ExStorage.TUI.Screen.ModalConfirm
@@ -25,7 +27,7 @@ defmodule ExStorage.TUI.Screen.WorkTable do
   alias ExStorage.TUI.Screen.Modules
   alias ExStorage.TUI.Screen.WorkView
 
-  @pid :work
+  @pid WorkService.pid()
 
   def new_state do
     %{
@@ -155,7 +157,7 @@ defmodule ExStorage.TUI.Screen.WorkTable do
     {ModalForm,
      ModalForm.new_state(
        "Create new Work",
-       Work.insert_definition(),
+       Work.insert_definition(&FormatTools.items/0),
        [
          {"s", "save", fn state -> save(state) end},
          {"c", "cancel", fn _state -> back() end},
@@ -224,7 +226,7 @@ defmodule ExStorage.TUI.Screen.WorkTable do
     {ModalForm,
      ModalForm.new_state(
        "Work Filter",
-       Work.filter_definition(),
+       Work.filter_definition(&FormatTools.items/0),
        [
          {"a", "apply", fn state -> apply(state) end},
          {"r", "reset", fn state -> reset(state) end},

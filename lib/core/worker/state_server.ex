@@ -7,19 +7,29 @@ defmodule ExStorage.Core.Worker.StateServer do
   @default_limit 10
 
   def start_link({name, service, repository}) do
-    GenServer.start_link(__MODULE__, {service, repository}, name: name)
+    start_link({name, service, repository, false})
+  end
+
+  def start_link({name, service, repository, initialize}) do
+    GenServer.start_link(__MODULE__, {service, repository, initialize}, name: name)
   end
 
   @impl true
-  def init({service, repository}) do
+  def init({service, repository, initialize}) do
     state = State.new_state(service, repository)
-    {:ok, state}
+
+    if initialize do
+      {:ok, state, {:continue, :load_page}}
+    else
+      {:ok, state}
+    end
   end
 
   def default_limit, do: @default_limit
 
   def state(pid), do: GenServer.call(pid, :state)
 
+  def find(pid, limit \\ nil, offset \\ nil, filter \\ nil), do: GenServer.call(pid, {:find , limit, offset, filter})
   def insert(pid, items), do: GenServer.call(pid, {:insert, items})
   def delete(pid, id \\ nil), do: GenServer.call(pid, {:delete, id})
 
@@ -36,7 +46,25 @@ defmodule ExStorage.Core.Worker.StateServer do
   def set_cursor(pid, cursor), do: GenServer.cast(pid, {:set_cursor, cursor})
 
   @impl true
+  def handle_continue(:load_page, state) do
+    {:reply, {:ok, new_state}, _} = fetch(state)
+    {:noreply, new_state}
+  end
+
+  @impl true
   def handle_call(:state, _from, state), do: {:reply, state, state}
+
+  def handle_call({:find, limit, offset, filter}, _from, state) do
+    case state.repository.find(limit, offset, filter) do
+      {:ok, items} ->
+        {:reply, {:ok, items}, state}
+
+      {:error, cause} ->
+        Log.error("An error occurred during items find: #{inspect(cause)}")
+
+        {:reply, {:error, cause}, state}
+    end
+  end
 
   def handle_call({:insert, items}, _from, state) do
     case state.repository.insert(items) do
@@ -134,7 +162,6 @@ defmodule ExStorage.Core.Worker.StateServer do
   def handle_cast(:increase_cursor, state) do
     new_cursor = Utils.increase_cursor(state.cursor, state.items)
     new_state = Map.put(state, :cursor, new_cursor)
-    Log.debug(state)
     {:noreply, new_state}
   end
 

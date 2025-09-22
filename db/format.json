@@ -1,0 +1,90 @@
+[
+    {
+        "code": "paper",
+        "description": "Physical print media, such as books, magazines, or manuals."
+    },
+    {
+        "code": "vhs",
+        "description": "Analog videotape format used mainly in the 1980s and 1990s for movies and home recordings."
+    },
+    {
+        "code": "dvd",
+        "description": "Digital optical disc storage format commonly used for movies, software, and data storage."
+    },
+    {
+        "code": "bluray",
+        "description": "High-definition optical disc format offering higher storage capacity than DVD, often used for HD movies."
+    },
+    {
+        "code": "nes",
+        "description": "Nintendo Entertainment System cartridges used for 8-bit video games."
+    },
+    {
+        "code": "snes",
+        "description": "Super Nintendo Entertainment System cartridges used for 16-bit video games."
+    },
+    {
+        "code": "n64",
+        "description": "Nintendo 64 cartridges used for 3D video games in the late 1990s."
+    },
+    {
+        "code": "gamecube",
+        "description": "Nintendo GameCube mini optical discs used for video games."
+    },
+    {
+        "code": "wii",
+        "description": "Nintendo Wii optical discs, backward compatible with GameCube discs."
+    },
+    {
+        "code": "wiiu",
+        "description": "Nintendo Wii U proprietary high-density discs used for video games."
+    },
+    {
+        "code": "switch",
+        "description": "Nintendo Switch game cards, a cartridge-like format for modern portable and console gaming."
+    },
+    {
+        "code": "switch2",
+        "description": "Nintendo Switch 2 game cards, a cartridge-like format for modern portable and console gaming."
+    },
+    {
+        "code": "ps1",
+        "description": "PlayStation 1 compact discs used for video games and multimedia."
+    },
+    {
+        "code": "ps2",
+        "description": "PlayStation 2 game console discs, often used for video games and DVD movie playback."
+    },
+    {
+        "code": "ps3",
+        "description": "PlayStation 3 game console discs, often used for video games and Blu-ray movie playback."
+    },
+    {
+        "code": "ps4",
+        "description": "PlayStation 4 game console discs, often used for video games and Blu-ray movie playback."
+    },
+    {
+        "code": "ps5",
+        "description": "PlayStation 5 game console discs, often used for video games and Ultra HD Blu-ray movies."
+    },
+    {
+        "code": "xbox",
+        "description": "Original Xbox game console discs, used for video games and some multimedia."
+    },
+    {
+        "code": "xbox360",
+        "description": "Xbox 360 game console discs, typically used for video games and multimedia."
+    },
+    {
+        "code": "xbox_one",
+        "description": "Xbox One game console discs, often used for video games and Blu-ray playback."
+    },
+    {
+        "code": "xbox_series_x",
+        "description": "Xbox Series X game console discs, often used for video games and Ultra HD Blu-ray movies."
+    },
+    {
+        "code": "digital",
+        "description": "Non-physical format distributed via the internet, including downloads and streaming services."
+    }
+]

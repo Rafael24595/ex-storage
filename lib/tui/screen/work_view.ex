@@ -2,11 +2,12 @@ defmodule ExStorage.TUI.Screen.WorkView do
   @behaviour ExStorage.TUI.Screen
 
   alias ExStorage.Core.Worker.StateServer
+  alias ExStorage.Core.Worker.WorkService
   alias ExStorage.Domain.Work
   alias ExStorage.TUI.Screen.Modules
   alias ExStorage.TUI.Screen.WorkTable
 
-  @pid :work
+  @pid WorkService.pid()
 
   def new_state do
     %{

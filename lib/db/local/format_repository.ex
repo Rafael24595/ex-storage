@@ -3,6 +3,7 @@ defmodule ExStorage.DB.Local.FormatRepository do
 
   use GenServer
 
+  alias ExStorage.Core.FileUtils
   alias ExStorage.Core.Utils
   alias ExStorage.DB.Local.FormatState
 
@@ -12,7 +13,20 @@ defmodule ExStorage.DB.Local.FormatRepository do
 
   @impl true
   def init(_) do
-    state = FormatState.new_state()
+    items =
+      case FileUtils.read_json(
+             "./db/format.json",
+             &ExStorage.DB.Local.FormatRepository.parse_json/1
+           ) do
+        {:ok, result} ->
+          result
+
+        {:error, reason} ->
+          Log.error("Error during '#{__MODULE__}' module initialization", reason)
+          []
+      end
+
+    state = FormatState.new_state(items)
     {:ok, state}
   end
 
@@ -50,6 +64,11 @@ defmodule ExStorage.DB.Local.FormatRepository do
       |> Enum.count()
 
     {:reply, {:ok, count}, state}
+  end
+
+  def handle_call({:find, nil, nil, nil}, _from, state) do
+    items = Map.get(state, :items, [])
+    {:reply, {:ok, items}, state}
   end
 
   def handle_call({:find, limit, offset, nil}, _from, state) do
@@ -114,5 +133,18 @@ defmodule ExStorage.DB.Local.FormatRepository do
           Regex.match?(regex, String.downcase(v))
         end)
     end
+  end
+
+  def parse_json(json) when is_list(json) do
+    result =
+      json
+      |> Enum.map(fn f -> Map.get(f, "code", "") end)
+      |> Enum.filter(fn f -> f != "" end)
+
+    {:ok, result}
+  end
+
+  def parse_json(_json) do
+    {:error, "The input is not a valid list"}
   end
 end

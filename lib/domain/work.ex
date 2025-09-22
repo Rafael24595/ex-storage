@@ -55,14 +55,18 @@ defmodule ExStorage.Domain.Work do
 
   def to_columns(works) when is_list(works) do
     [
-      {"Title", works
-        |> Enum.map(& &1.title)},
-      {"Type", works
-        |> Enum.map(& &1.type)},
-      {"Released", works
-        |> Enum.map(& DateUtils.from_millis(&1.released))},
-      {"Creator", works
-        |> Enum.map(& &1.creator)}
+      {"Title",
+       works
+       |> Enum.map(& &1.title)},
+      {"Type",
+       works
+       |> Enum.map(& &1.type)},
+      {"Released",
+       works
+       |> Enum.map(&DateUtils.from_millis(&1.released))},
+      {"Creator",
+       works
+       |> Enum.map(& &1.creator)}
     ]
   end
 
@@ -70,7 +74,7 @@ defmodule ExStorage.Domain.Work do
     to_columns([work])
   end
 
-  def insert_definition do
+  def insert_definition(format_items) do
     [
       %{
         code: "title",
@@ -104,11 +108,18 @@ defmodule ExStorage.Domain.Work do
         title: "Concepts",
         type: "tally",
         values: ["condept_001", "condept_002", "condept_003", "condept_004"]
+      },
+      %{
+        code: "format",
+        title: "Format",
+        type: "enum",
+        values: format_items.(),
+        required: true
       }
     ]
   end
 
-  def filter_definition do
+  def filter_definition(format_items) do
     [
       %{
         code: "id",
@@ -151,6 +162,12 @@ defmodule ExStorage.Domain.Work do
         title: "Concepts",
         type: "tally",
         values: ["condept_001", "condept_002", "condept_003", "condept_004"]
+      },
+      %{
+        code: "format",
+        title: "Format",
+        type: "enum",
+        values: format_items.(),
       }
     ]
   end
@@ -161,7 +178,7 @@ defmodule ExStorage.Domain.Work do
     |> remove_invalid_keys()
   end
 
-   defp fix_released_filter(filter) do
+  defp fix_released_filter(filter) do
     filter =
       case {Map.get(filter, "released_from"), Map.get(filter, "released_to")} do
         {nil, nil} ->
@@ -188,8 +205,9 @@ defmodule ExStorage.Domain.Work do
   end
 
   defp remove_invalid_keys(filter) do
+    format_items = fn -> [] end
     valid_codes =
-      insert_definition()
+      insert_definition(format_items)
       |> Enum.map(& &1.code)
 
     Map.take(filter, valid_codes)
