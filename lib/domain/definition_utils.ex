@@ -1,4 +1,4 @@
-defmodule ExStorage.Domain.Utils do
+defmodule ExStorage.Domain.DefinitionUtils do
   @moduledoc """
   Utility functions for converting field definitions and values into maps.
 

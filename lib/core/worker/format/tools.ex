@@ -1,6 +1,6 @@
 defmodule ExStorage.Core.Worker.FormatTools do
-alias ExStorage.Core.Worker.FormatService
-alias ExStorage.Core.Worker.StateServer
+  alias ExStorage.Core.Worker.FormatService
+  alias ExStorage.Core.Worker.StateServer
 
   def items do
     case StateServer.find(FormatService.pid()) do
@@ -12,5 +12,4 @@ alias ExStorage.Core.Worker.StateServer
         []
     end
   end
-
 end

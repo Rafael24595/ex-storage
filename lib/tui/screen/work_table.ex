@@ -15,12 +15,12 @@ defmodule ExStorage.TUI.Screen.WorkTable do
 
   @behaviour ExStorage.TUI.Screen
 
+  alias ExStorage.Core.Worker.WorkTools
   alias ExStorage.Core.NumberUtils
   alias ExStorage.Core.Utils, as: CoreUtils
-  alias ExStorage.Core.Worker.FormatTools
   alias ExStorage.Core.Worker.StateServer
   alias ExStorage.Core.Worker.WorkService
-  alias ExStorage.Domain.{Utils, Work}
+  alias ExStorage.Domain.{DefinitionUtils, Work}
   alias ExStorage.TUI.Screen.Constants
   alias ExStorage.TUI.Screen.ModalConfirm
   alias ExStorage.TUI.Screen.ModalForm
@@ -157,7 +157,7 @@ defmodule ExStorage.TUI.Screen.WorkTable do
     {ModalForm,
      ModalForm.new_state(
        "Create new Work",
-       Work.insert_definition(&FormatTools.items/0),
+       WorkTools.insert_definition(),
        [
          {"s", "save", fn state -> save(state) end},
          {"c", "cancel", fn _state -> back() end},
@@ -226,7 +226,7 @@ defmodule ExStorage.TUI.Screen.WorkTable do
     {ModalForm,
      ModalForm.new_state(
        "Work Filter",
-       Work.filter_definition(&FormatTools.items/0),
+       WorkTools.filter_definition(),
        [
          {"a", "apply", fn state -> apply(state) end},
          {"r", "reset", fn state -> reset(state) end},
@@ -263,7 +263,7 @@ defmodule ExStorage.TUI.Screen.WorkTable do
     fields = Map.get(state, :fields, %{})
     values = Map.get(state, :values, %{})
 
-    map = Utils.definition_to_map(fields, values)
+    map = DefinitionUtils.definition_to_map(fields, values)
     work = Work.from_map(map)
 
     StateServer.insert(@pid, work)

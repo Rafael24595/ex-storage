@@ -1,6 +1,6 @@
 defmodule ExStorage.Core.Worker.FormatService do
   alias ExStorage.Core.Worker.Service
-  alias ExStorage.Domain.Utils, as: DomainUtils
+  alias ExStorage.Domain.DefinitionUtils
 
   @behaviour Service
 
@@ -16,7 +16,7 @@ defmodule ExStorage.Core.Worker.FormatService do
     filter_definition = %{}
     filter_values = %{}
 
-    filter = DomainUtils.definition_to_map(filter_definition, filter_values)
+    filter = DefinitionUtils.definition_to_map(filter_definition, filter_values)
 
     with {:ok, works} <- state.repository.find(limit, offset, filter),
          {:ok, count} <- state.repository.count(),

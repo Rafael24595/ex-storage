@@ -3,10 +3,9 @@ defmodule ExStorage.Domain.Work do
   Represents a creative work (e.g., novel, film, videogame) in the ExStorage domain.
   Provides struct definition, serialization helpers, and metadata for forms and filters.
   """
+  alias ExStorage.Domain.Work.Constants
   alias ExStorage.Core.DateUtils
   alias ExStorage.Core.NumberUtils
-
-  @types ["novel", "film", "videogame", "other"]
 
   @enforce_keys [:title, :type]
   defstruct [
@@ -49,10 +48,6 @@ defmodule ExStorage.Domain.Work do
     }
   end
 
-  def types do
-    @types
-  end
-
   def to_columns(works) when is_list(works) do
     [
       {"Title",
@@ -72,104 +67,6 @@ defmodule ExStorage.Domain.Work do
 
   def to_columns(work) do
     to_columns([work])
-  end
-
-  def insert_definition(format_items) do
-    [
-      %{
-        code: "title",
-        title: "Title",
-        type: "string"
-      },
-      %{
-        code: "creator",
-        title: "Creator",
-        type: "string"
-      },
-      %{
-        code: "released",
-        title: "Released",
-        type: "date"
-      },
-      %{
-        code: "tags",
-        title: "Tags",
-        type: "list"
-      },
-      %{
-        code: "type",
-        title: "Type",
-        type: "enum",
-        values: types(),
-        required: true
-      },
-      %{
-        code: "concepts",
-        title: "Concepts",
-        type: "tally",
-        values: ["condept_001", "condept_002", "condept_003", "condept_004"]
-      },
-      %{
-        code: "format",
-        title: "Format",
-        type: "enum",
-        values: format_items.(),
-        required: true
-      }
-    ]
-  end
-
-  def filter_definition(format_items) do
-    [
-      %{
-        code: "id",
-        title: "Id",
-        type: "string"
-      },
-      %{
-        code: "title",
-        title: "Title",
-        type: "string"
-      },
-      %{
-        code: "creator",
-        title: "Creator",
-        type: "string"
-      },
-      %{
-        code: "released_from",
-        title: "Released From",
-        type: "date"
-      },
-      %{
-        code: "released_to",
-        title: "Released To",
-        type: "date"
-      },
-      %{
-        code: "tags",
-        title: "Tags",
-        type: "list"
-      },
-      %{
-        code: "type",
-        title: "Type",
-        type: "enum",
-        values: types()
-      },
-      %{
-        code: "concepts",
-        title: "Concepts",
-        type: "tally",
-        values: ["condept_001", "condept_002", "condept_003", "condept_004"]
-      },
-      %{
-        code: "format",
-        title: "Format",
-        type: "enum",
-        values: format_items.(),
-      }
-    ]
   end
 
   def fix_filter_map(filter) do
@@ -205,9 +102,9 @@ defmodule ExStorage.Domain.Work do
   end
 
   defp remove_invalid_keys(filter) do
-    format_items = fn -> [] end
+    format_items = []
     valid_codes =
-      insert_definition(format_items)
+      Constants.insert_definition([format_items])
       |> Enum.map(& &1.code)
 
     Map.take(filter, valid_codes)

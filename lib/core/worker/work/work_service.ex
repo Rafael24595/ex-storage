@@ -1,7 +1,7 @@
 defmodule ExStorage.Core.Worker.WorkService do
-  alias ExStorage.Core.Worker.FormatTools
+  alias ExStorage.Core.Worker.WorkTools
   alias ExStorage.Core.Worker.Service
-  alias ExStorage.Domain.Utils, as: DomainUtils
+  alias ExStorage.Domain.DefinitionUtils
   alias ExStorage.Domain.Work, as: DomainWork
 
   @behaviour Service
@@ -15,10 +15,10 @@ defmodule ExStorage.Core.Worker.WorkService do
   def fetch(state, offset) do
     limit = Map.get(state, :limit, 10)
 
-    filter_definition = DomainWork.filter_definition(&FormatTools.items/0)
+    filter_definition = WorkTools.filter_definition()
     filter_values = Map.get(state, :filter, %{})
 
-    filter = DomainUtils.definition_to_map(filter_definition, filter_values)
+    filter = DefinitionUtils.definition_to_map(filter_definition, filter_values)
     filter = DomainWork.fix_filter_map(filter)
 
     with {:ok, works} <- state.repository.find(limit, offset, filter),
