@@ -1,6 +1,6 @@
-defmodule ExStorage.Domain.Work_1_0_0 do
+defmodule ExStorage.Domain.WorkV1 do
 
-  @version "1.0.0"
+  @version "v1"
 
   def version do
     @version

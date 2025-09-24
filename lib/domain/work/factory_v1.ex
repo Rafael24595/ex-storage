@@ -1,7 +1,7 @@
-defmodule ExStorage.Domain.Work_1_0_0.Factory do
-  alias ExStorage.Domain.Work_1_0_0.Constants
-  alias ExStorage.Domain.FilterUtils
+defmodule ExStorage.Domain.WorkV1.Factory do
   alias ExStorage.Core.DateUtils
+  alias ExStorage.Domain.FilterUtils
+  alias ExStorage.Domain.WorkV1.Constants
 
   def to_columns(works) when is_list(works) do
     [

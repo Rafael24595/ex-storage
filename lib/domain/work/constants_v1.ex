@@ -1,6 +1,6 @@
-defmodule ExStorage.Domain.Work_1_0_0.Constants do
-  @category [:book, :film, :game, :music, :other]
-  @status [:new, :like_new, :very_good, :good, :acceptable, :damaged, :poor, :other]
+defmodule ExStorage.Domain.WorkV1.Constants do
+  @category ["book", "film", "game", "music", "other"]
+  @status ["new", "like_new", "very_good", "good", "acceptable", "damaged", "poor", "other"]
 
   def category do
     @category

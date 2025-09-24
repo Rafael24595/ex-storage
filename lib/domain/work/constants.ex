@@ -1,6 +1,6 @@
 defmodule ExStorage.Domain.Work.Constants do
 
-  @category [:book, :film, :game, :music, :other]
+  @category ["book", "film", "game", "music", "other"]
 
   def category do
     @category
