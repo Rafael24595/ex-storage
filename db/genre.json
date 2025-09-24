@@ -1,0 +1,174 @@
+[
+  {
+    "code": "fantasy",
+    "description": "Fantasy: Stories set in imaginary worlds with magical elements."
+  },
+  {
+    "code": "science_fiction",
+    "description": "Science Fiction: Stories exploring futuristic concepts, advanced technology, or space travel."
+  },
+  {
+    "code": "romance",
+    "description": "Romance: Stories focused on love and emotional relationships."
+  },
+  {
+    "code": "horror",
+    "description": "Horror: Stories intended to frighten or disturb the audience."
+  },
+  {
+    "code": "mystery",
+    "description": "Mystery: Stories centered on solving a crime or uncovering secrets."
+  },
+  {
+    "code": "thriller",
+    "description": "Thriller: Stories designed to create suspense and excitement."
+  },
+  {
+    "code": "historical_fiction",
+    "description": "Historical Fiction: Stories set in a past time period with accurate historical details."
+  },
+  {
+    "code": "biography",
+    "description": "Biography: Non-fiction works telling the life story of a person."
+  },
+  {
+    "code": "action",
+    "description": "Action: Stories or games emphasizing physical activity, fights, and stunts."
+  },
+  {
+    "code": "comedy",
+    "description": "Comedy: Stories or films intended to entertain and provoke laughter."
+  },
+  {
+    "code": "drama",
+    "description": "Drama: Stories focusing on emotional and relational development of characters."
+  },
+  {
+    "code": "romantic_comedy",
+    "description": "Romantic Comedy: Light-hearted stories combining romance and humor."
+  },
+  {
+    "code": "documentary",
+    "description": "Documentary: Works documenting real events, people, or phenomena."
+  },
+  {
+    "code": "role_playing_game",
+    "description": "Role-Playing Game: Games where players control characters in a fictional world, often with story progression."
+  },
+  {
+    "code": "first_person_shooter",
+    "description": "First-Person Shooter: Games focused on shooting from the protagonist's perspective."
+  },
+  {
+    "code": "third_person_shooter",
+    "description": "Third-Person Shooter: Shooting games viewed from a camera behind the character."
+  },
+  {
+    "code": "strategy",
+    "description": "Strategy: Games emphasizing planning, tactics, and resource management."
+  },
+  {
+    "code": "simulation",
+    "description": "Simulation: Games that replicate real-world activities or scenarios."
+  },
+  {
+    "code": "adventure",
+    "description": "Adventure: Games or stories focusing on exploration and puzzle-solving."
+  },
+  {
+    "code": "sports",
+    "description": "Sports: Games simulating real-world sports competitions."
+  },
+  {
+    "code": "racing",
+    "description": "Racing: Games centered on competitive racing of vehicles or characters."
+  },
+  {
+    "code": "fighting",
+    "description": "Fighting: Games focused on combat between characters in arenas or stages."
+  },
+  {
+    "code": "musical",
+    "description": "Musical: Works where songs and music play a central role in storytelling."
+  },
+  {
+    "code": "crime",
+    "description": "Crime: Stories revolving around criminal activities and investigations."
+  },
+  {
+    "code": "detective",
+    "description": "Detective: Stories focusing on a detective solving cases and mysteries."
+  },
+  {
+    "code": "war",
+    "description": "War: Stories or films portraying conflicts, battles, and the human impact of war."
+  },
+  {
+    "code": "animation",
+    "description": "Animation: Works created using animated visuals, often aimed at family audiences."
+  },
+  {
+    "code": "sandbox",
+    "description": "Sandbox: Games giving players freedom to explore and create in an open world."
+  },
+  {
+    "code": "horror_game",
+    "description": "Horror Game: Games designed to frighten players through suspense and disturbing content."
+  },
+  {
+    "code": "psychological_thriller",
+    "description": "Psychological Thriller: Works focused on suspense, mind games, and mental states."
+  },
+  {
+    "code": "cyberpunk",
+    "description": "Cyberpunk: Stories or games set in dystopian futures with advanced technology and social decay."
+  },
+  {
+    "code": "steampunk",
+    "description": "Steampunk: Works blending historical settings with steam-powered technology and imaginative inventions."
+  },
+  {
+    "code": "slice_of_life",
+    "description": "Slice of Life: Stories depicting everyday experiences and personal growth."
+  },
+  {
+    "code": "metroidvania",
+    "description": "Metroidvania: Games emphasizing exploration and unlocking new areas as abilities grow."
+  },
+  {
+    "code": "survival",
+    "description": "Survival: Games or stories focusing on staying alive under harsh conditions."
+  },
+  {
+    "code": "platformer",
+    "description": "Platformer: Games where players navigate levels by jumping, climbing, or running."
+  },
+  {
+    "code": "open_world",
+    "description": "Open World: Games allowing players to freely explore large virtual worlds."
+  },
+  {
+    "code": "western",
+    "description": "Western: Stories set in the American Old West, often featuring cowboys, outlaws, and frontier life."
+  },
+  {
+    "code": "noir",
+    "description": "Noir: Dark, cynical stories with morally ambiguous characters, often in crime settings."
+  },
+  {
+    "code": "political_thriller",
+    "description": "Political Thriller: Stories involving political conspiracies, espionage, and intrigue."
+  },
+  {
+    "code": "dark_fantasy",
+    "description": "Dark Fantasy: Fantasy stories with horror elements, grim themes, and moral ambiguity."
+  },
+  {
+    "code": "epic_fantasy",
+    "description": "Epic Fantasy: Fantasy stories with large-scale conflicts, complex worlds, and numerous characters."
+  },
+  {
+    "code": "dystopian",
+    "description": "Dystopian: Stories set in oppressive or futuristic societies, often critiquing social structures."
+  }
+]

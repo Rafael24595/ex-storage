@@ -1,4 +1,4 @@
-defmodule ExStorage.DB.RepositoryFormat do
+defmodule ExStorage.DB.RepositoryGenre do
   @callback count() ::
               {:ok, integer()}
               | {:error, any()}
@@ -8,7 +8,7 @@ defmodule ExStorage.DB.RepositoryFormat do
   @callback find(limit :: integer() | nil, offset :: integer() | nil, filter :: map() | nil) ::
               {:ok, list(String.t())}
               | {:error, any()}
-  @callback insert(format :: String.t()) ::
+  @callback insert(genre :: String.t()) ::
               {:ok, list(String.t())}
               | {:error, any()}
   @callback delete(id :: String.t() | nil) ::

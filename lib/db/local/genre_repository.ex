@@ -1,10 +1,10 @@
-defmodule ExStorage.DB.Local.FormatRepository do
-  @behaviour ExStorage.DB.RepositoryFormat
+defmodule ExStorage.DB.Local.GenreRepository do
+  @behaviour ExStorage.DB.RepositoryGenre
 
   use GenServer
 
   alias ExStorage.DB.Local.EnumRepository
-  alias ExStorage.DB.Local.FormatRepository
+  alias ExStorage.DB.Local.GenreRepository
 
   def start_link(_) do
     GenServer.start_link(__MODULE__, %{}, name: __MODULE__)
@@ -14,8 +14,8 @@ defmodule ExStorage.DB.Local.FormatRepository do
   def init(_) do
     EnumRepository.init(%{
       name: __MODULE__,
-      file: "./db/format.json",
-      parser: &FormatRepository.parse_json/1
+      file: "./db/genre.json",
+      parser: &GenreRepository.parse_json/1
     })
   end
 

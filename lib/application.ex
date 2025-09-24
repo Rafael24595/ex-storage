@@ -1,30 +1,28 @@
 defmodule ExStorage.Application do
   @moduledoc false
   alias ExStorage.Core.Worker.FormatService
+  alias ExStorage.Core.Worker.GenreService
   alias ExStorage.Core.Worker.WorkService
+  
   use Application
 
   def start(_type, _args) do
     session_id = generate_session_id()
 
-    format_pid = FormatService.pid()
-    format_serv = get_format_serv()
-    format_repo = get_format_repo()
-
-    work_pid = WorkService.pid()
-    work_serv = get_work_serv()
-    work_repo = get_work_repo()
-
     children = [
       {ExStorage.Log.Logger, session_id},
       ExStorage.DB.Supervisor,
       Supervisor.child_spec(
-        {ExStorage.Core.Worker.StateServer, {format_pid, format_serv, format_repo}},
-        id: format_pid
+        {ExStorage.Core.Worker.StateServer, format_deps()},
+        id: FormatService.pid()
       ),
       Supervisor.child_spec(
-        {ExStorage.Core.Worker.StateServer, {work_pid, work_serv, work_repo}},
-        id: work_pid
+        {ExStorage.Core.Worker.StateServer, genre_deps()},
+        id: GenreService.pid()
+      ),
+      Supervisor.child_spec(
+        {ExStorage.Core.Worker.StateServer, work_deps()},
+        id: WorkService.pid()
       ),
       ExStorage.TUI.Loop
     ]
@@ -37,19 +35,21 @@ defmodule ExStorage.Application do
     DateTime.utc_now() |> DateTime.to_unix() |> Integer.to_string()
   end
 
-  defp get_work_serv do
-    Application.get_env(:ex_storage, :work_serv, WorkService)
+  defp work_deps do
+    serv = Application.get_env(:ex_storage, :work_serv, WorkService)
+    repo = Application.get_env(:ex_storage, :work_repo, ExStorage.DB.SurrealDB.WorkRepository)
+    {WorkService.pid(), serv, repo}
   end
 
-  defp get_work_repo do
-    Application.get_env(:ex_storage, :work_repo, ExStorage.DB.SurrealDB.WorkRepository)
+  defp format_deps do
+    serv = Application.get_env(:ex_storage, :format_serv, FormatService)
+    repo = Application.get_env(:ex_storage, :format_repo, ExStorage.DB.Local.FormatRepository)
+    {FormatService.pid, serv, repo}
   end
 
-  defp get_format_serv do
-    Application.get_env(:ex_storage, :format_serv, FormatService)
-  end
-
-  defp get_format_repo do
-    Application.get_env(:ex_storage, :format_repo, ExStorage.DB.Local.FormatRepository)
+  defp genre_deps do
+    serv = Application.get_env(:ex_storage, :format_serv, GenreService)
+    repo = Application.get_env(:ex_storage, :format_repo, ExStorage.DB.Local.GenreRepository)
+    {GenreService.pid, serv, repo}
   end
 end
