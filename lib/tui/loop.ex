@@ -1,6 +1,8 @@
 defmodule ExStorage.TUI.Loop do
   use GenServer
+
   alias ExStorage.TUI.Input
+  alias ExStorage.TUI.Screen.WorkTable
 
   def start_link(_args) do
     GenServer.start_link(__MODULE__, :ok, name: __MODULE__)
@@ -11,8 +13,8 @@ defmodule ExStorage.TUI.Loop do
     Terminal.enable_raw_mode()
 
     screen = %{
-      module: ExStorage.TUI.Screen.WorkTable,
-      state: ExStorage.TUI.Screen.WorkTable.new_state()
+      module: WorkTable,
+      state: WorkTable.new_state()
     }
 
     {:ok, _task} = Task.start_link(fn -> input_loop(self()) end)
@@ -103,10 +105,10 @@ defmodule ExStorage.TUI.Loop do
       module.onload(state)
     rescue
       err ->
-        message =
-          "An error occurred during screen loading from #{inspect(module)} with state #{inspect(state)}"
-
-        Log.error(message, err)
+        message = "An error occurred during screen loading from #{inspect(module)}"
+        stacktrace = "Stacktrace: #{Exception.format(:error, err, __STACKTRACE__)}"
+        screenshot = "Screenshot: #{inspect(state)}"
+        Log.error(message, err, [stacktrace, screenshot])
     end
 
     {:noreply, screen}
@@ -119,26 +121,24 @@ defmodule ExStorage.TUI.Loop do
       module.render(state)
     rescue
       err ->
-        message =
-          "An error occurred during screen rendering from #{inspect(module)} with state #{inspect(state)}."
-
-        Log.error(message, err)
+        message = "An error occurred during screen rendering from #{inspect(module)}."
+        stacktrace = "Stacktrace: #{Exception.format(:error, err, __STACKTRACE__)}"
+        screenshot = "Screenshot: #{inspect(state)}"
+        Log.error(message, err, [stacktrace, screenshot])
     end
 
     {:noreply, screen}
   end
 
   defp safe_handle_event(module, state, event) do
-    try do
-      module.handle_event(state, event)
-    rescue
-      err ->
-        message =
-          "An error occurred during event handling from #{inspect(module)} with state #{inspect(state)}."
+    module.handle_event(state, event)
+  rescue
+    err ->
+      message = "An error occurred during event handling from #{inspect(module)}."
+      stacktrace = "Stacktrace: #{Exception.format(:error, err, __STACKTRACE__)}"
+      screenshot = "Screenshot: #{inspect(state)}"
+      Log.error(message, err, [stacktrace, screenshot])
 
-        Log.error(message, err)
-
-        {:same, state}
-    end
+      {:same, state}
   end
 end
