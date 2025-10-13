@@ -3,7 +3,7 @@ defmodule ExStorage.DB.RepositoryWork do
   Behaviour definition for work repositories in ExStorage.
 
   Any module that implements this behaviour is responsible for persisting and
-  retrieving `ExStorage.Domain.Work` entities. This abstraction allows multiple
+  retrieving `ExStorage.Domain.WorkV1` entities. This abstraction allows multiple
   backends (e.g., in-memory, database, external services) to be used
   interchangeably.
 
@@ -14,6 +14,7 @@ defmodule ExStorage.DB.RepositoryWork do
     * `insert/1` — Persists a new work item.
     * `delete/1` — Deletes a work item by its ID.
   """
+alias ExStorage.Domain.WorkV1
 
   @callback count() ::
               {:ok, integer()}
@@ -22,12 +23,12 @@ defmodule ExStorage.DB.RepositoryWork do
               {:ok, integer() | nil}
               | {:error, any()}
   @callback find(limit :: integer() | nil, offset :: integer() | nil, filter :: map() | nil) ::
-              {:ok, list(ExStorage.Domain.Work.t())}
+              {:ok, list(WorkV1.t())}
               | {:error, any()}
-  @callback insert(work :: ExStorage.Domain.Work.t()) ::
-              {:ok, list(ExStorage.Domain.Work.t())}
+  @callback insert(work :: WorkV1.t()) ::
+              {:ok, list(WorkV1.t())}
               | {:error, any()}
   @callback delete(id :: String.t() | nil) ::
-              {:ok, ExStorage.Domain.Work.t() | nil}
+              {:ok, WorkV1.t() | nil}
               | {:error, any()}
 end

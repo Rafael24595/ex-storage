@@ -3,7 +3,7 @@ defmodule ExStorage.TUI.Screen.WorkView do
 
   alias ExStorage.Core.Worker.StateServer
   alias ExStorage.Core.Worker.WorkService
-  alias ExStorage.Domain.Work
+  alias ExStorage.Domain.WorkV1.Factory
   alias ExStorage.TUI.Screen.Modules
   alias ExStorage.TUI.Screen.WorkTable
 
@@ -42,7 +42,7 @@ defmodule ExStorage.TUI.Screen.WorkView do
     work_state = StateServer.state(@pid)
     work = Enum.at(work_state.items, work_state.cursor)
 
-    columns = Work.to_columns(work)
+    columns = Factory.to_columns(work)
     header = "Source: #{work.id}"
     Modules.items_table(header, columns)
 

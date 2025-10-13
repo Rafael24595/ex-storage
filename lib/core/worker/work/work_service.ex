@@ -1,8 +1,8 @@
 defmodule ExStorage.Core.Worker.WorkService do
-  alias ExStorage.Core.Worker.WorkTools
   alias ExStorage.Core.Worker.Service
+  alias ExStorage.Core.Worker.WorkTools
   alias ExStorage.Domain.DefinitionUtils
-  alias ExStorage.Domain.Work, as: DomainWork
+  alias ExStorage.Domain.WorkV1.Factory
 
   @behaviour Service
 
@@ -19,7 +19,7 @@ defmodule ExStorage.Core.Worker.WorkService do
     filter_values = Map.get(state, :filter, %{})
 
     filter = DefinitionUtils.definition_to_map(filter_definition, filter_values)
-    filter = DomainWork.fix_filter_map(filter)
+    filter = Factory.fix_filter_map(filter)
 
     with {:ok, works} <- state.repository.find(limit, offset, filter),
          {:ok, count} <- state.repository.count(),

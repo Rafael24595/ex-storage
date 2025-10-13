@@ -3,11 +3,11 @@ defmodule ExStorage.DB.SurrealDB.WorkRepository do
 
   use GenServer
 
-  alias ExStorage.DB.SurrealDB.WorkState
-  alias ExStorage.DB.SurrealDB.Connection
   alias ExStorage.DB.SurrealDB.Client, as: Client
+  alias ExStorage.DB.SurrealDB.Connection
   alias ExStorage.DB.SurrealDB.Utils, as: Utils
-  alias ExStorage.Domain.Work, as: DomainWork
+  alias ExStorage.DB.SurrealDB.WorkState
+  alias ExStorage.Domain.WorkV1
 
   @default_ns "test"
   @default_db "work"
@@ -103,7 +103,7 @@ defmodule ExStorage.DB.SurrealDB.WorkRepository do
 
     case Client.query(conn, query) do
       {:ok, [%{"result" => works}]} ->
-        domain_works = Enum.map(works, &DomainWork.from_map/1)
+        domain_works = Enum.map(works, &WorkV1.from_map/1)
         {:reply, {:ok, domain_works}, state}
 
       {:ok, []} ->
@@ -117,12 +117,12 @@ defmodule ExStorage.DB.SurrealDB.WorkRepository do
   def handle_call({:insert, work}, _from, state) do
     conn = Map.get(state, :conn)
 
-    json = Jason.encode!(DomainWork.to_map(work))
+    json = Jason.encode!(WorkV1.to_map(work))
     sql = "CREATE work CONTENT #{json};"
 
     case Client.query(conn, sql) do
       {:ok, [%{"result" => works}]} ->
-        domain_works = Enum.map(works, &DomainWork.from_map/1)
+        domain_works = Enum.map(works, &WorkV1.from_map/1)
         {:reply, {:ok, domain_works}, state}
 
       {:error, reason} ->
@@ -148,7 +148,7 @@ defmodule ExStorage.DB.SurrealDB.WorkRepository do
     if id != nil do
       case Client.query(conn, "SELECT * FROM #{id};") do
         {:ok, [%{"result" => works}]} ->
-          {:ok, DomainWork.from_map(hd(works))}
+          {:ok, WorkV1.from_map(hd(works))}
 
         {:ok, []} ->
           {:ok, nil}

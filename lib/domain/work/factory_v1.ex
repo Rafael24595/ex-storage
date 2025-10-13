@@ -32,7 +32,7 @@ defmodule ExStorage.Domain.WorkV1.Factory do
     genres = []
     concepts = []
 
-    definition = Constants.filter_definition(format, genres, concepts)
+    definition = Constants.insert_definition(format, genres, concepts)
 
     filter
     |> FilterUtils.fix_date_filter("released_from", "released_to", "released")

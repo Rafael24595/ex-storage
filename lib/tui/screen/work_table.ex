@@ -3,7 +3,7 @@ defmodule ExStorage.TUI.Screen.WorkTable do
   TUI screen for listing, navigating, and managing works.
 
   This screen implements the `ExStorage.TUI.Screen` behaviour and acts as
-  the main interface for interacting with `ExStorage.Domain.Work` entities
+  the main interface for interacting with work entities
   through the terminal.
 
   ## State
@@ -15,11 +15,11 @@ defmodule ExStorage.TUI.Screen.WorkTable do
 
   @behaviour ExStorage.TUI.Screen
 
-  alias ExStorage.Core.Worker.WorkTools
   alias ExStorage.Core.NumberUtils
   alias ExStorage.Core.Utils, as: CoreUtils
   alias ExStorage.Core.Worker.StateServer
   alias ExStorage.Core.Worker.WorkService
+  alias ExStorage.Core.Worker.WorkTools
   alias ExStorage.Domain.{DefinitionUtils, Work}
   alias ExStorage.TUI.Screen.Constants
   alias ExStorage.TUI.Screen.ModalConfirm
