@@ -33,6 +33,10 @@ defmodule ExStorage.Core.DateUtils do
     end
   end
 
+  def from_millis(nil)  do
+    ""
+  end
+
   def from_millis(ms) when is_integer(ms) do
     ms
     |> DateTime.from_unix!(:millisecond)

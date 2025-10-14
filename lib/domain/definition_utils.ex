@@ -41,6 +41,20 @@ defmodule ExStorage.Domain.DefinitionUtils do
     definition_value(key, values)
   end
 
+  defp definition_to_field(%{code: key, type: "number"} = _field, values) do
+    value =
+      values
+      |> Map.get(key, %{})
+      |> Map.get(:value)
+
+    parsed = normalize_integer(value)
+    if parsed == nil do
+      {nil, nil}
+    else
+      {key, parsed}
+    end
+  end
+
   defp definition_to_field(%{code: key, type: "date"} = _field, values) do
     definition_value(key, values)
   end
@@ -105,5 +119,16 @@ defmodule ExStorage.Domain.DefinitionUtils do
       |> Map.get(:value)
 
     {key, value}
+  end
+
+  defp normalize_integer(nil), do: nil
+
+  defp normalize_integer(value) when is_integer(value), do: value
+
+  defp normalize_integer(value) when is_binary(value) do
+    case Integer.parse(value) do
+      {num, ""} -> num
+      _ -> nil
+    end
   end
 end

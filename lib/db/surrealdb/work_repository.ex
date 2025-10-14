@@ -32,7 +32,9 @@ defmodule ExStorage.DB.SurrealDB.WorkRepository do
   @impl true
   def count_filter(filter), do: GenServer.call(__MODULE__, {:count_filter, filter})
   @impl true
-  def find(limit \\ nil, offset \\ nil, filter \\ nil), do: GenServer.call(__MODULE__, {:find, limit, offset, filter})
+  def find(limit \\ nil, offset \\ nil, filter \\ nil),
+    do: GenServer.call(__MODULE__, {:find, limit, offset, filter})
+
   @impl true
   def insert(format), do: GenServer.call(__MODULE__, {:insert, format})
   @impl true
@@ -55,7 +57,7 @@ defmodule ExStorage.DB.SurrealDB.WorkRepository do
   end
 
   def handle_call({:count_filter, nil}, _from, state) do
-    {:reply, nil ,state}
+    {:reply, nil, state}
   end
 
   def handle_call({:count_filter, filter}, _from, state) do
@@ -117,13 +119,28 @@ defmodule ExStorage.DB.SurrealDB.WorkRepository do
   def handle_call({:insert, work}, _from, state) do
     conn = Map.get(state, :conn)
 
-    json = Jason.encode!(WorkV1.to_map(work))
+    now = DateTime.utc_now()
+    timestamp = DateTime.to_unix(now, :millisecond)
+
+    work_map =
+      work
+      |> WorkV1.to_map()
+      |> Map.drop([:id])
+      |> Map.put(:version, WorkV1.version)
+      |> Map.put(:timestamp, timestamp)
+
+
+    json = Jason.encode!(work_map)
+
     sql = "CREATE work CONTENT #{json};"
 
     case Client.query(conn, sql) do
-      {:ok, [%{"result" => works}]} ->
+      {:ok, [%{"result" => works}]}  when is_list(works) ->
         domain_works = Enum.map(works, &WorkV1.from_map/1)
         {:reply, {:ok, domain_works}, state}
+
+      {:ok, [%{"result" => result}]} ->
+        {:reply, {:error, result}, state}
 
       {:error, reason} ->
         {:reply, {:error, reason}, state}

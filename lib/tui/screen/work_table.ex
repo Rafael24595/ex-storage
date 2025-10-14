@@ -20,7 +20,7 @@ defmodule ExStorage.TUI.Screen.WorkTable do
   alias ExStorage.Core.Worker.StateServer
   alias ExStorage.Core.Worker.WorkService
   alias ExStorage.Core.Worker.WorkTools
-  alias ExStorage.Domain.{DefinitionUtils, Work}
+  alias ExStorage.Domain.{DefinitionUtils, WorkV1}
   alias ExStorage.TUI.Screen.Constants
   alias ExStorage.TUI.Screen.ModalConfirm
   alias ExStorage.TUI.Screen.ModalForm
@@ -264,7 +264,7 @@ defmodule ExStorage.TUI.Screen.WorkTable do
     values = Map.get(state, :values, %{})
 
     map = DefinitionUtils.definition_to_map(fields, values)
-    work = Work.from_map(map)
+    work = WorkV1.from_map(map)
 
     StateServer.insert(@pid, work)
 

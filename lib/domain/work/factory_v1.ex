@@ -15,7 +15,7 @@ defmodule ExStorage.Domain.WorkV1.Factory do
       {"Direction", Enum.map(works, &Enum.join(&1.direction, ", "))},
       {"Cast", Enum.map(works, &Enum.join(&1.cast, ", "))},
       {"Music", Enum.map(works, &Enum.join(&1.music, ", "))},
-      {"Amount", Enum.map(works, & &1.amount)},
+      {"Amount", Enum.map(works, &to_string(&1.amount || ""))},
       {"Released", Enum.map(works, &DateUtils.from_millis(&1.released))},
       {"Aquired", Enum.map(works, &DateUtils.from_millis(&1.aquired))},
       {"Concepts", Enum.map(works, &Enum.join(&1.concepts, ", "))},

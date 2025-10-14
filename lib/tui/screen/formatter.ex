@@ -32,6 +32,7 @@ defmodule ExStorage.TUI.Screen.Formatter do
   defp format_column(head, values) do
     max_length =
       values
+      |> Enum.map(&string_guard/1)
       |> Enum.map(&String.length/1)
       |> Enum.max()
 
@@ -48,7 +49,10 @@ defmodule ExStorage.TUI.Screen.Formatter do
   end
 
   defp format_cell(value, max_length) do
-    value_len = String.length(value)
+    value_len =
+      value
+      |> string_guard()
+      |> String.length()
 
     value =
       if value_len < max_length do
@@ -71,6 +75,7 @@ defmodule ExStorage.TUI.Screen.Formatter do
     start_char = Map.get(opts, :start_char, "|")
     close_char = Map.get(opts, :close_char, "|")
     point_char = Map.get(opts, :point_char, "^")
+
     points =
       opts
       |> Map.get(:points, [])
@@ -152,4 +157,10 @@ defmodule ExStorage.TUI.Screen.Formatter do
       {from, to}
     end
   end
+
+  defp string_guard(nil), do: ""
+
+  defp string_guard(v) when is_binary(v), do: v
+
+  defp string_guard(v), do: to_string(v)
 end
