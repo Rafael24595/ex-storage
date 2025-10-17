@@ -1,4 +1,6 @@
 defmodule ExStorage.DB.Supervisor do
+  @moduledoc false
+
   use Supervisor
 
   def start_link(_) do
@@ -7,12 +9,33 @@ defmodule ExStorage.DB.Supervisor do
 
   @impl true
   def init(:ok) do
-    work_repository = Application.get_env(:ex_storage, :work_repository, ExStorage.DB.SurrealDB.WorkRepository)
-    format_repository = Application.get_env(:ex_storage, :format_repository, ExStorage.DB.Local.FormatRepository)
-    genre_repository = Application.get_env(:ex_storage, :genre_repository, ExStorage.DB.Local.GenreRepository)
+    work_repository =
+      Application.get_env(:ex_storage, :work_repository, ExStorage.DB.SurrealDB.WorkRepository)
+
+    concept_repository =
+      Application.get_env(
+        :ex_storage,
+        :concept_repository,
+        ExStorage.DB.SurrealDB.ConceptRepository
+      )
+
+    format_repository =
+      Application.get_env(
+        :ex_storage,
+        :format_repository,
+        ExStorage.DB.Local.FormatRepository
+      )
+
+    genre_repository =
+      Application.get_env(
+        :ex_storage,
+        :genre_repository,
+        ExStorage.DB.Local.GenreRepository
+      )
 
     children = [
       work_repository,
+      concept_repository,
       format_repository,
       genre_repository
     ]

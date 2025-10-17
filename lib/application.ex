@@ -1,9 +1,10 @@
 defmodule ExStorage.Application do
   @moduledoc false
+  alias ExStorage.Core.Worker.ConceptService
   alias ExStorage.Core.Worker.FormatService
   alias ExStorage.Core.Worker.GenreService
   alias ExStorage.Core.Worker.WorkService
-  
+
   use Application
 
   def start(_type, _args) do
@@ -19,6 +20,10 @@ defmodule ExStorage.Application do
       Supervisor.child_spec(
         {ExStorage.Core.Worker.StateServer, genre_deps()},
         id: GenreService.pid()
+      ),
+      Supervisor.child_spec(
+        {ExStorage.Core.Worker.StateServer, concept_deps()},
+        id: ConceptService.pid()
       ),
       Supervisor.child_spec(
         {ExStorage.Core.Worker.StateServer, work_deps()},
@@ -39,6 +44,12 @@ defmodule ExStorage.Application do
     serv = Application.get_env(:ex_storage, :work_serv, WorkService)
     repo = Application.get_env(:ex_storage, :work_repo, ExStorage.DB.SurrealDB.WorkRepository)
     {WorkService.pid(), serv, repo}
+  end
+
+  defp concept_deps do
+    serv = Application.get_env(:ex_storage, :concept_serv, ConceptService)
+    repo = Application.get_env(:ex_storage, :concept_repo, ExStorage.DB.SurrealDB.ConceptRepository)
+    {ConceptService.pid(), serv, repo}
   end
 
   defp format_deps do
