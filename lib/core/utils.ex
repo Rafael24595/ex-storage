@@ -1,4 +1,6 @@
 defmodule ExStorage.Core.Utils do
+  @moduledoc false
+
   def decrease_cursor(cursor, options) do
     cursor = cursor || 0
     options = options || []
@@ -21,6 +23,14 @@ defmodule ExStorage.Core.Utils do
     end
   end
 
+  def define_cursor(cursor, options) do
+    total = length(options)
+
+    cursor
+    |> max(0)
+    |> min(max(total - 1, 0))
+  end
+
   def equal_ignore_case?(a, b) do
     String.downcase(a) == String.downcase(b)
   end
@@ -33,30 +43,29 @@ defmodule ExStorage.Core.Utils do
       |> Regex.escape()
       |> String.replace("\\*", ".*")
 
-    Regex.compile!("^#{rest}$")
+    case Regex.compile("^#{rest}$") do
+      {:ok, regex} ->
+        regex
+
+      {:error, reason} ->
+        Log.error("Invalid regex pattern: #{pattern}. Reason: #{inspect(reason)}")
+        ~r/^$/
+    end
   end
 
   def match_index(list, pattern, extractor) do
-    try do
-      cond do
-        String.contains?(pattern, "*") ->
-          regex = pattern_to_regex(pattern)
+    if String.contains?(pattern, "*") do
+      regex = pattern_to_regex(pattern)
 
-          Enum.find_index(list, fn i ->
-            v = extractor.(i)
-            Regex.match?(regex, String.downcase(v))
-          end)
-
-        true ->
-          Enum.find_index(list, fn i ->
-            v = extractor.(i)
-            equal_ignore_case?(v, pattern)
-          end)
-      end
-    rescue
-      err ->
-        Log.error("An error occurred while regex matching. Actual value: #{pattern}", err)
-        nil
+      Enum.find_index(list, fn i ->
+        v = extractor.(i)
+        Regex.match?(regex, String.downcase(v))
+      end)
+    else
+      Enum.find_index(list, fn i ->
+        v = extractor.(i)
+        equal_ignore_case?(v, pattern)
+      end)
     end
   end
 
