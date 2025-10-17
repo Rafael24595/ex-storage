@@ -1,4 +1,8 @@
 defmodule ExStorage.DB.SurrealDB.WorkRepository do
+  @moduledoc """
+  SurrealDB implementation of the Work Repository.
+  """
+
   @behaviour ExStorage.DB.RepositoryWork
 
   use GenServer
@@ -44,7 +48,7 @@ defmodule ExStorage.DB.SurrealDB.WorkRepository do
   def handle_call(:count, _from, state) do
     conn = Map.get(state, :conn)
 
-    case Client.query(conn, "SELECT count() FROM work GROUP BY count;") do
+    case Client.query(conn, "SELECT count() FROM #{state.conn.db} GROUP BY count;") do
       {:ok, [%{"result" => [%{"count" => count}]}]} ->
         {:reply, {:ok, count}, state}
 
@@ -68,7 +72,7 @@ defmodule ExStorage.DB.SurrealDB.WorkRepository do
     else
       conn = Map.get(state, :conn)
 
-      query = "SELECT count() FROM work #{where} GROUP BY count;"
+      query = "SELECT count() FROM #{state.conn.db} #{where} GROUP BY count;"
 
       case Client.query(conn, query) do
         {:ok, [%{"result" => [%{"count" => count}]}]} ->
@@ -101,7 +105,7 @@ defmodule ExStorage.DB.SurrealDB.WorkRepository do
 
     clause = if clause == "", do: "", else: " #{clause}"
 
-    query = "SELECT * FROM work#{clause};"
+    query = "SELECT * FROM #{state.conn.db}#{clause};"
 
     case Client.query(conn, query) do
       {:ok, [%{"result" => works}]} ->
@@ -126,16 +130,15 @@ defmodule ExStorage.DB.SurrealDB.WorkRepository do
       work
       |> WorkV1.to_map()
       |> Map.drop([:id])
-      |> Map.put(:version, WorkV1.version)
+      |> Map.put(:version, WorkV1.version())
       |> Map.put(:timestamp, timestamp)
-
 
     json = Jason.encode!(work_map)
 
-    sql = "CREATE work CONTENT #{json};"
+    sql = "CREATE #{state.conn.db} CONTENT #{json};"
 
     case Client.query(conn, sql) do
-      {:ok, [%{"result" => works}]}  when is_list(works) ->
+      {:ok, [%{"result" => works}]} when is_list(works) ->
         domain_works = Enum.map(works, &WorkV1.from_map/1)
         {:reply, {:ok, domain_works}, state}
 
@@ -150,7 +153,7 @@ defmodule ExStorage.DB.SurrealDB.WorkRepository do
   def handle_call({:delete, id}, _from, state) do
     conn = Map.get(state, :conn)
 
-    sql = "DELETE #{id || "work"};"
+    sql = "DELETE #{id || state.conn.db};"
 
     with {:ok, work} <- find_one(conn, id),
          {:ok, _} <- Client.query(conn, sql) do

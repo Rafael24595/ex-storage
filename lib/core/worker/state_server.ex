@@ -1,4 +1,8 @@
 defmodule ExStorage.Core.Worker.StateServer do
+  @moduledoc """
+  Generic State Server for Workers.
+  """
+
   use GenServer
 
   alias ExStorage.Core.Utils
@@ -166,9 +170,7 @@ defmodule ExStorage.Core.Worker.StateServer do
   end
 
   def handle_cast({:set_cursor, cursor}, state) do
-    total = length(state.items)
-    new_cursor = max(cursor, 0)
-    new_cursor = min(new_cursor, max(total - 1, 0))
+    new_cursor = Utils.define_cursor(cursor, state.items)
     new_state = Map.put(state, :cursor, new_cursor)
     {:noreply, new_state}
   end

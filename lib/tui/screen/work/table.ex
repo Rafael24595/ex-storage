@@ -1,4 +1,4 @@
-defmodule ExStorage.TUI.Screen.WorkTable do
+defmodule ExStorage.TUI.Screen.Work.Table do
   @moduledoc """
   TUI screen for listing, navigating, and managing works.
 
@@ -22,10 +22,11 @@ defmodule ExStorage.TUI.Screen.WorkTable do
   alias ExStorage.Core.Worker.WorkTools
   alias ExStorage.Domain.{DefinitionUtils, WorkV1}
   alias ExStorage.TUI.Screen.Constants
-  alias ExStorage.TUI.Screen.ModalConfirm
-  alias ExStorage.TUI.Screen.ModalForm
+  alias ExStorage.TUI.Screen.Home.Tables
+  alias ExStorage.TUI.Screen.Modal.Confirm
+  alias ExStorage.TUI.Screen.Modal.Form
   alias ExStorage.TUI.Screen.Modules
-  alias ExStorage.TUI.Screen.WorkView
+  alias ExStorage.TUI.Screen.Work.View
 
   @pid WorkService.pid()
 
@@ -53,6 +54,7 @@ defmodule ExStorage.TUI.Screen.WorkTable do
       {"f", "Open a form modal to define the work filter."},
       {"c", "Open a form modal to create a new work."},
       {"d", "Delete the selected work."},
+      {"b", "Go back to the tables view."},
       {"q", "Exit the application."},
     ]
 
@@ -145,7 +147,7 @@ defmodule ExStorage.TUI.Screen.WorkTable do
   end
 
   def handle_event(%{show_help: false} = _state, {:char, "v"}) do
-    {WorkView, WorkView.new_state()}
+    {View, View.new_state()}
   end
 
   def handle_event(%{show_help: true} = state, {:char, "c"}) do
@@ -154,8 +156,8 @@ defmodule ExStorage.TUI.Screen.WorkTable do
   end
 
   def handle_event(%{show_help: false} = _state, {:char, "c"}) do
-    {ModalForm,
-     ModalForm.new_state(
+    {Form,
+     Form.new_state(
        "Create new Work",
        WorkTools.insert_definition(),
        [
@@ -170,8 +172,8 @@ defmodule ExStorage.TUI.Screen.WorkTable do
     work_state = StateServer.state(@pid)
     work = Enum.at(work_state.items, work_state.cursor)
 
-    {ModalConfirm,
-     ModalConfirm.new_state(
+    {Confirm,
+     Confirm.new_state(
        "The element '#{work.id}' will be deleted, are you sure?",
        [
          {"y", "yes", fn state -> delete(state, work.id) end},
@@ -179,6 +181,10 @@ defmodule ExStorage.TUI.Screen.WorkTable do
          {"q", "quit", fn state -> quit(state) end}
        ]
      )}
+  end
+
+  def handle_event(%{show_help: false} = _state, {:char, "b"}) do
+    {Tables, Tables.new_state()}
   end
 
   def handle_event(state, {:char, "q"}), do: {:quit, state}
@@ -223,8 +229,8 @@ defmodule ExStorage.TUI.Screen.WorkTable do
   end
 
   def show_filter_modal do
-    {ModalForm,
-     ModalForm.new_state(
+    {Form,
+     Form.new_state(
        "Work Filter",
        WorkTools.filter_definition(),
        [
@@ -281,7 +287,7 @@ defmodule ExStorage.TUI.Screen.WorkTable do
     end
   end
 
-  defp back, do: {ExStorage.TUI.Screen.WorkTable, new_state()}
+  defp back, do: {ExStorage.TUI.Screen.Work.Table, new_state()}
 
   defp quit(state), do: {:quit, state}
 end

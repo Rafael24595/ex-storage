@@ -3,7 +3,7 @@ defmodule ExStorage.DB.RepositoryWork do
   Behaviour definition for work repositories in ExStorage.
 
   Any module that implements this behaviour is responsible for persisting and
-  retrieving `ExStorage.Domain.WorkV1` entities. This abstraction allows multiple
+  retrieving `WorkV1` entities. This abstraction allows multiple
   backends (e.g., in-memory, database, external services) to be used
   interchangeably.
 

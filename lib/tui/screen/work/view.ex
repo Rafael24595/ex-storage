@@ -1,11 +1,15 @@
-defmodule ExStorage.TUI.Screen.WorkView do
+defmodule ExStorage.TUI.Screen.Work.View do
+  @moduledoc """
+  TUI screen for viewing and managing a single work data.
+  """
+
   @behaviour ExStorage.TUI.Screen
 
   alias ExStorage.Core.Worker.StateServer
   alias ExStorage.Core.Worker.WorkService
   alias ExStorage.Domain.WorkV1.Factory
   alias ExStorage.TUI.Screen.Modules
-  alias ExStorage.TUI.Screen.WorkTable
+  alias ExStorage.TUI.Screen.Work.Table
 
   @pid WorkService.pid()
 
@@ -68,7 +72,7 @@ defmodule ExStorage.TUI.Screen.WorkView do
   end
 
   def handle_event(_state, {:char, "b"}) do
-    {WorkTable, WorkTable.new_state()}
+    {Table, Table.new_state()}
   end
 
   def handle_event(%{show_help: false} = state, {:char, "r"}) do
