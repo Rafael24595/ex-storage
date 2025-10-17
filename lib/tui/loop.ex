@@ -1,8 +1,12 @@
 defmodule ExStorage.TUI.Loop do
+  @moduledoc """
+  Main TUI loop handling input and screen rendering.
+  """
+  
   use GenServer
 
   alias ExStorage.TUI.Input
-  alias ExStorage.TUI.Screen.WorkTable
+  alias ExStorage.TUI.Screen.Home.Tables
 
   def start_link(_args) do
     GenServer.start_link(__MODULE__, :ok, name: __MODULE__)
@@ -13,8 +17,8 @@ defmodule ExStorage.TUI.Loop do
     Terminal.enable_raw_mode()
 
     screen = %{
-      module: WorkTable,
-      state: WorkTable.new_state()
+      module: Tables,
+      state: Tables.new_state()
     }
 
     {:ok, _task} = Task.start_link(fn -> input_loop(self()) end)
