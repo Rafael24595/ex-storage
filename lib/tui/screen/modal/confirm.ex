@@ -1,4 +1,11 @@
-defmodule ExStorage.TUI.Screen.ModalConfirm do
+defmodule ExStorage.TUI.Screen.Modal.Confirm do
+  @moduledoc """
+  A modal screen to confirm an action with multiple options.
+  """
+  
+  alias ExStorage.TUI.Screen.Formatter
+  alias ExStorage.TUI.Screen.Modules
+
   @behaviour ExStorage.TUI.Screen
 
   def new_state(message, options, cursor \\ nil) do
@@ -19,15 +26,15 @@ defmodule ExStorage.TUI.Screen.ModalConfirm do
   def render(%{show_help: true} = _state) do
     actions = [
       {"← / →", "Navigate between options."},
-      {"text", "Type the name of an option to execute it."},
+      {"text", "Type the name of an option to execute it."}
     ]
 
     commands = [
       {"c", "continue"}
     ]
 
-    ExStorage.TUI.Screen.Modules.help(actions)
-    ExStorage.TUI.Screen.Modules.commands(commands)
+    Modules.help(actions)
+    Modules.commands(commands)
   end
 
   def render(state) do
@@ -58,8 +65,8 @@ defmodule ExStorage.TUI.Screen.ModalConfirm do
 
     max_len = max(String.length(mess_format), String.length(keys_format))
 
-    mess_format = "|#{ExStorage.TUI.Screen.Formatter.center_text(mess_format, max_len)}|"
-    keys_format = "|#{ExStorage.TUI.Screen.Formatter.center_text(keys_format, max_len)}|"
+    mess_format = "|#{Formatter.center_text(mess_format, max_len)}|"
+    keys_format = "|#{Formatter.center_text(keys_format, max_len)}|"
 
     limit = String.duplicate("-", String.length(mess_format))
     IO.puts(limit)

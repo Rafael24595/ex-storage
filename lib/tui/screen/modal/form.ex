@@ -1,4 +1,4 @@
-defmodule ExStorage.TUI.Screen.ModalForm do
+defmodule ExStorage.TUI.Screen.Modal.Form do
   @moduledoc """
   Interactive modal form screen for the TUI.
 
